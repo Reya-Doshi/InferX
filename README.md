@@ -8,9 +8,7 @@ InferX is a production-grade, distributed AI inference engine designed for cloud
 
 ## Demonstration
 
-https://github.com/Reya-Doshi/InferX/blob/main/InferX.mp4?raw=true
-
-<video src="https://raw.githubusercontent.com/Reya-Doshi/InferX/main/InferX.mp4" controls="controls" width="100%"></video>
+![InferX Demo](InferX.mp4)
 
 ---
 
