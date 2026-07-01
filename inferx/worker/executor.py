@@ -31,7 +31,6 @@ class CudaStream:
         self.stream_id = stream_id
         self._lock = asyncio.Lock()
 
-
         self.is_testing = "unittest" in sys.argv[0] or "pytest" in sys.argv[0]
         if not self.is_testing:
             try:

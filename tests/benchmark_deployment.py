@@ -20,7 +20,6 @@ async def run_benchmarks() -> None:
     mgr = RuntimeConfigurationManager()
     mgr.load_from_file(config_file)
 
-
     def on_update(val: int) -> None:
         pass
 

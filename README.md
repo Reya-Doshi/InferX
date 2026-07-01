@@ -3,14 +3,7 @@
 [![CI](https://github.com/Reya-Doshi/InferX/actions/workflows/ci.yml/badge.svg)](https://github.com/Reya-Doshi/InferX/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-Compatible-blue.svg)](deploy/kubernetes/)
-
 InferX is a production-grade, distributed AI inference engine designed for cloud-native orchestration of LLMs and deep learning workloads. Combining event-driven job execution, dynamic scheduling, stateful memory management, and mTLS secured JSON-RPC inter-node clusters, InferX delivers microsecond-level latency control.
-
-## Demonstration
-
-[![Watch Demonstration Video](https://img.shields.io/badge/Watch_Demo_Video-3b66f5?style=for-the-badge&logo=playstation)](https://github.com/Reya-Doshi/InferX/blob/main/InferX.mp4)
-
-[▶ Click here to play the demonstration video](https://github.com/Reya-Doshi/InferX/blob/main/InferX.mp4)
 
 ---
 
