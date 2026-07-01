@@ -6,6 +6,10 @@
 
 InferX is a production-grade, distributed AI inference engine designed for cloud-native orchestration of LLMs and deep learning workloads. Combining event-driven job execution, dynamic scheduling, stateful memory management, and mTLS secured JSON-RPC inter-node clusters, InferX delivers microsecond-level latency control.
 
+## Demonstration
+
+<video src="InferX.mp4" width="100%" controls></video>
+
 ---
 
 ## Key Features
