@@ -174,6 +174,10 @@ class RestAdapter(IProtocolAdapter):
             await self._write_json_response(
                 writer, me.status_code, {"error": me.args[0], "code": me.error_code}
             )
+        except ValueError as ve:
+            logger.info(
+                f"Gracefully handled TCP probe / early connection closure: {ve}"
+            )
         except Exception as e:
             logger.error(
                 f"Internal gateway execution failure: {e}",
