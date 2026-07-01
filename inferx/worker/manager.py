@@ -146,10 +146,11 @@ class WorkerManager(IWorkerManager):
             pool_size=shm_pool_size, slot_size=shm_slot_size
         )
 
+        ctx = multiprocessing.get_context("spawn")
         # Inter-process queues
-        self.request_queue = multiprocessing.Queue()
-        self.response_queue = multiprocessing.Queue()
-        self.stop_event = multiprocessing.Event()
+        self.request_queue = ctx.Queue()
+        self.response_queue = ctx.Queue()
+        self.stop_event = ctx.Event()
 
         # Worker state tracking
         self._processes: Dict[str, multiprocessing.Process] = {}
@@ -284,12 +285,13 @@ class WorkerManager(IWorkerManager):
             (worker_id_num(worker_id) * 2 + 1) % total_cores,
         ]
 
-        # Inter-process shared heartbeat Value
-        heartbeat_val = multiprocessing.Value("d", time.time())
-        self._heartbeats[worker_id] = heartbeat_val
-
         # Setup spawned Process (spawn method required on Windows)
         ctx = multiprocessing.get_context("spawn")
+
+        # Inter-process shared heartbeat Value
+        heartbeat_val = ctx.Value("d", time.time())
+        self._heartbeats[worker_id] = heartbeat_val
+
         proc = ctx.Process(
             target=worker_process_hot_loop,
             args=(

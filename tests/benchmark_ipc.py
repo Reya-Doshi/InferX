@@ -52,12 +52,12 @@ def shm_worker_target(
 
 def run_queue_benchmark(payload_size: int, count: int) -> float:
     """Measures transfer latency using standard multiprocessing.Queue."""
-    req_queue = multiprocessing.Queue()
-    res_queue = multiprocessing.Queue()
+    ctx = multiprocessing.get_context("spawn")
+    req_queue = ctx.Queue()
+    res_queue = ctx.Queue()
 
     payload = b"x" * payload_size
 
-    ctx = multiprocessing.get_context("spawn")
     proc = ctx.Process(target=queue_worker_target, args=(req_queue, res_queue, count))
     proc.start()
 
@@ -83,13 +83,13 @@ def run_shm_benchmark(payload_size: int, count: int) -> float:
 
     # Allocate pool
     shm = SharedMemoryPool(name=shm_name, size=shm_size, create=True)
-    req_queue = multiprocessing.Queue()
-    res_queue = multiprocessing.Queue()
+    ctx = multiprocessing.get_context("spawn")
+    req_queue = ctx.Queue()
+    res_queue = ctx.Queue()
 
     payload = b"x" * payload_size
     offset = 0
 
-    ctx = multiprocessing.get_context("spawn")
     proc = ctx.Process(
         target=shm_worker_target, args=(req_queue, res_queue, shm_name, shm_size, count)
     )
