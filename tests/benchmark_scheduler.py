@@ -5,6 +5,7 @@ InferX Scheduler Performance Benchmark.
 Measures task throughput (enqueues/dequeues per second) and average delay
 for FIFO and Priority Heap policies.
 """
+
 import asyncio
 import time
 from typing import Any
@@ -29,7 +30,7 @@ async def run_policy_benchmark(name: str, policy_instance: Any, count: int) -> N
             request_id=f"r-{i}",
             tenant_id="t1",
             priority=i % 5,
-            payload=b"benchmark_data"
+            payload=b"benchmark_data",
         )
         for i in range(count)
     ]
@@ -52,25 +53,28 @@ async def run_policy_benchmark(name: str, policy_instance: Any, count: int) -> N
     duration = end_time - start_time
     throughput = count / duration
 
-    print(f"Policy: {name:<20} | Throughput: {throughput:10.2f} ops/sec | Latency: {(duration / count) * 1e6:8.3f} us")
+    print(
+        f"Policy: {name:<20} | Throughput: {throughput:10.2f} ops/sec | Latency: {(duration / count) * 1e6:8.3f} us"
+    )
     await scheduler.stop()
 
 
 async def main() -> None:
     count = 50000
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print(f"INFERX SCHEDULER ENGINE THROUGHPUT BENCHMARK (Count: {count})")
-    print("="*70)
-    
+    print("=" * 70)
+
     # Run FIFO
     await run_policy_benchmark("FIFO (Queue)", FIFOPolicy(), count)
-    
+
     # Run Priority Heap
     await run_policy_benchmark("Priority Queue (Heap)", PriorityQueuePolicy(), count)
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
 
 if __name__ == "__main__":
     # Import Any dynamically to prevent compilation errors
     from typing import Any
+
     asyncio.run(main())

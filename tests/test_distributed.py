@@ -5,15 +5,13 @@ InferX Distributed Runtime Test Suite.
 Verifies Raft-inspired elections, Gossip-based discovery membership,
 load-aware scheduling delegators, metadata replication, and node failovers.
 """
+
 import asyncio
 import unittest
-from typing import Dict, List
 
-from inferx.distributed.discovery import NodeRegistry, Membership
-from inferx.distributed.election import LeaderElection
+from inferx.distributed.discovery import NodeRegistry
 from inferx.distributed.interfaces import NodeInfo, NodeStatus
-from inferx.distributed.rpc import ClusterRpcServer, ClusterRpcClient
-from inferx.distributed.state import ClusterStateManager
+from inferx.distributed.rpc import ClusterRpcClient
 from inferx.distributed.scheduler import DistributedScheduler
 from inferx.distributed.manager import ClusterManager
 from inferx.scheduler.interfaces import ScheduledRequest
@@ -25,30 +23,36 @@ class TestDistributed(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         # We configure mock nodes running on static local ports to avoid startup races.
         self.mgr1 = ClusterManager(
-            node_id="node-1", host="127.0.0.1", port=19101,
+            node_id="node-1",
+            host="127.0.0.1",
+            port=19101,
             peers=[
                 {"node_id": "node-2", "host": "127.0.0.1", "port": 19102},
-                {"node_id": "node-3", "host": "127.0.0.1", "port": 19103}
+                {"node_id": "node-3", "host": "127.0.0.1", "port": 19103},
             ],
-            hosted_models=["llama"]
+            hosted_models=["llama"],
         )
-        
+
         self.mgr2 = ClusterManager(
-            node_id="node-2", host="127.0.0.1", port=19102,
+            node_id="node-2",
+            host="127.0.0.1",
+            port=19102,
             peers=[
                 {"node_id": "node-1", "host": "127.0.0.1", "port": 19101},
-                {"node_id": "node-3", "host": "127.0.0.1", "port": 19103}
+                {"node_id": "node-3", "host": "127.0.0.1", "port": 19103},
             ],
-            hosted_models=["llama"]
+            hosted_models=["llama"],
         )
 
         self.mgr3 = ClusterManager(
-            node_id="node-3", host="127.0.0.1", port=19103,
+            node_id="node-3",
+            host="127.0.0.1",
+            port=19103,
             peers=[
                 {"node_id": "node-1", "host": "127.0.0.1", "port": 19101},
-                {"node_id": "node-2", "host": "127.0.0.1", "port": 19102}
+                {"node_id": "node-2", "host": "127.0.0.1", "port": 19102},
             ],
-            hosted_models=["gpt"]
+            hosted_models=["gpt"],
         )
 
     async def asyncTearDown(self) -> None:
@@ -65,13 +69,13 @@ class TestDistributed(unittest.IsolatedAsyncioTestCase):
         # Stagger campaign timers to guarantee node-1 campaigns first and wins without split votes
         self.mgr1.election.election_min_ms = 40
         self.mgr1.election.election_max_ms = 80
-        
+
         self.mgr2.election.election_min_ms = 140
         self.mgr2.election.election_max_ms = 180
-        
+
         self.mgr3.election.election_min_ms = 240
         self.mgr3.election.election_max_ms = 280
-        
+
         for m in [self.mgr1, self.mgr2, self.mgr3]:
             m.election.heartbeat_ms = 15
 
@@ -92,9 +96,21 @@ class TestDistributed(unittest.IsolatedAsyncioTestCase):
         states = []
         leaders = []
         for _ in range(30):
-            states = [self.mgr1.election.state, self.mgr2.election.state, self.mgr3.election.state]
-            leaders = [self.mgr1.election.get_leader(), self.mgr2.election.get_leader(), self.mgr3.election.get_leader()]
-            if states.count("LEADER") == 1 and leaders[0] and leaders[0] == leaders[1] == leaders[2]:
+            states = [
+                self.mgr1.election.state,
+                self.mgr2.election.state,
+                self.mgr3.election.state,
+            ]
+            leaders = [
+                self.mgr1.election.get_leader(),
+                self.mgr2.election.get_leader(),
+                self.mgr3.election.get_leader(),
+            ]
+            if (
+                states.count("LEADER") == 1
+                and leaders[0]
+                and leaders[0] == leaders[1] == leaders[2]
+            ):
                 leader_elected = True
                 break
             await asyncio.sleep(0.1)
@@ -116,7 +132,7 @@ class TestDistributed(unittest.IsolatedAsyncioTestCase):
         # Update Node 1 peers list
         self.mgr1.local_node.port = self.mgr1.rpc_server.port
         self.mgr2.local_node.port = self.mgr2.rpc_server.port
-        
+
         # Simulating Node 2 joining the seed Node 1
         await self.mgr2.join_cluster(self.mgr1.host, self.mgr1.port)
 
@@ -146,14 +162,15 @@ class TestDistributed(unittest.IsolatedAsyncioTestCase):
 
         leader_mgr = self.mgr1
         followers = [self.mgr2, self.mgr3]
-        
+
         # Leader sets value and replicates to followers
         peers = [
-            {"node_id": f.node_id, "host": f.host, "port": f.port}
-            for f in followers
+            {"node_id": f.node_id, "host": f.host, "port": f.port} for f in followers
         ]
-        
-        await leader_mgr.state_manager.replicate_to_followers(peers, "model_config_llama", {"vram_req": "4GB"})
+
+        await leader_mgr.state_manager.replicate_to_followers(
+            peers, "model_config_llama", {"vram_req": "4GB"}
+        )
 
         # Wait brief moment for network dispatch
         await asyncio.sleep(0.05)
@@ -166,14 +183,26 @@ class TestDistributed(unittest.IsolatedAsyncioTestCase):
     async def test_distributed_scheduling_overload_delegation(self) -> None:
         # We configure 2 mock schedulers and registries
         registry = NodeRegistry()
-        
+
         # Setup local node
-        n1 = NodeInfo(node_id="node-1", host="127.0.0.1", port=9001, status=NodeStatus.ACTIVE, gpu_utilization=0.9)
+        n1 = NodeInfo(
+            node_id="node-1",
+            host="127.0.0.1",
+            port=9001,
+            status=NodeStatus.ACTIVE,
+            gpu_utilization=0.9,
+        )
         n1.hosted_models.append("llama")
         # Setup remote node
-        n2 = NodeInfo(node_id="node-2", host="127.0.0.1", port=9002, status=NodeStatus.ACTIVE, gpu_utilization=0.2)
+        n2 = NodeInfo(
+            node_id="node-2",
+            host="127.0.0.1",
+            port=9002,
+            status=NodeStatus.ACTIVE,
+            gpu_utilization=0.2,
+        )
         n2.hosted_models.append("llama")
-        
+
         registry.register_node(n1)
         registry.register_node(n2)
 
@@ -183,7 +212,7 @@ class TestDistributed(unittest.IsolatedAsyncioTestCase):
                 self._queue = [1] * 8
 
         local_sched = MockLocalScheduler()
-        
+
         # Mock RPC client
         class MockClient(ClusterRpcClient):
             async def call(self, host, port, method, params):
@@ -194,10 +223,12 @@ class TestDistributed(unittest.IsolatedAsyncioTestCase):
             registry=registry,
             local_scheduler=local_sched,
             rpc_client=MockClient(),
-            local_queue_threshold=5
+            local_queue_threshold=5,
         )
 
-        req = ScheduledRequest(request_id="req-delegated", tenant_id="t1", payload="test")
+        req = ScheduledRequest(
+            request_id="req-delegated", tenant_id="t1", payload="test"
+        )
         res = await dist_sched.schedule_request(req, "llama", "v1.0")
 
         # Must delegate to Node 2 (port 9002) because local node-1 is overloaded (8 > 5)

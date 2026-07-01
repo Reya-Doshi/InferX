@@ -5,6 +5,7 @@ InferX Health Aggregator.
 Consolidates startup, liveness, and readiness probe checks across runtime subsystems,
 evaluating dependency health in parallel.
 """
+
 import asyncio
 from typing import Any, Callable, Coroutine, Dict, Tuple
 import threading
@@ -18,16 +19,23 @@ class HealthAggregator:
     """
     Registry aggregating component checks to verify global system health.
     """
+
     def __init__(self) -> None:
         # Maps component name -> callback returning (is_healthy, detail_string)
-        self._probes: Dict[str, Callable[[], Coroutine[Any, Any, Tuple[bool, str]]]] = {}
+        self._probes: Dict[str, Callable[[], Coroutine[Any, Any, Tuple[bool, str]]]] = (
+            {}
+        )
         self._lock = threading.Lock()
 
-    def register_probe(self, name: str, callback: Callable[[], Coroutine[Any, Any, Tuple[bool, str]]]) -> None:
+    def register_probe(
+        self, name: str, callback: Callable[[], Coroutine[Any, Any, Tuple[bool, str]]]
+    ) -> None:
         """Registers a component health evaluation callback."""
         with self._lock:
             self._probes[name] = callback
-            logger.info(f"Registered health probe check: {name}", component="health_aggregator")
+            logger.info(
+                f"Registered health probe check: {name}", component="health_aggregator"
+            )
 
     def unregister_probe(self, name: str) -> None:
         """Removes a component health check."""
@@ -37,7 +45,7 @@ class HealthAggregator:
     async def check_health(self) -> Tuple[bool, Dict[str, str]]:
         """
         Executes all registered probes in parallel.
-        
+
         Returns:
             Tuple: (overall_healthy: bool, details_map: dict).
         """

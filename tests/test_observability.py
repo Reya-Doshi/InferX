@@ -5,8 +5,7 @@ InferX Observability Test Suite.
 Verifies Prometheus metric formatting, nested tracing span propagation,
 health aggregator probe collections, alerting rules, and timeline execution profiles.
 """
-import asyncio
-import time
+
 import unittest
 from typing import Any, Dict, Tuple
 
@@ -26,12 +25,12 @@ class TestObservability(unittest.IsolatedAsyncioTestCase):
         self.tracer = Tracer()
         self.health = HealthAggregator()
         self.alerts = AlertManager()
-        
+
         self.telemetry = TelemetryManager(
             metrics_registry=self.metrics,
             tracer=self.tracer,
             health_aggregator=self.health,
-            alert_manager=self.alerts
+            alert_manager=self.alerts,
         )
 
     async def asyncTearDown(self) -> None:
@@ -40,11 +39,13 @@ class TestObservability(unittest.IsolatedAsyncioTestCase):
     def test_prometheus_metrics_export(self) -> None:
         counter = self.metrics.counter("requests_total", "Total requests processed")
         counter.inc(5.0, labels={"model": "llama", "status": "200"})
-        
+
         gauge = self.metrics.gauge("vram_usage_bytes", "VRAM usage in bytes")
         gauge.set(4 * 1024 * 1024 * 1024, labels={"gpu": "0"})
 
-        histogram = self.metrics.histogram("inference_latency_sec", "Inference latency", buckets=[0.01, 0.05, 0.1])
+        histogram = self.metrics.histogram(
+            "inference_latency_sec", "Inference latency", buckets=[0.01, 0.05, 0.1]
+        )
         histogram.observe(0.008, labels={"model": "llama"})
         histogram.observe(0.045, labels={"model": "llama"})
         histogram.observe(0.120, labels={"model": "llama"})
@@ -52,27 +53,39 @@ class TestObservability(unittest.IsolatedAsyncioTestCase):
         export_str = self.metrics.export_prometheus()
 
         # Verify Counter formatting
-        self.assertIn('# HELP requests_total Total requests processed', export_str)
-        self.assertIn('# TYPE requests_total counter', export_str)
+        self.assertIn("# HELP requests_total Total requests processed", export_str)
+        self.assertIn("# TYPE requests_total counter", export_str)
         self.assertIn('requests_total{model="llama", status="200"} 5.0', export_str)
 
         # Verify Gauge formatting
         self.assertIn('vram_usage_bytes{gpu="0"} 4294967296.0', export_str)
 
         # Verify Histogram buckets formatting
-        self.assertIn('inference_latency_sec_bucket{model="llama", le="0.01"} 1', export_str)
-        self.assertIn('inference_latency_sec_bucket{model="llama", le="0.05"} 2', export_str)
-        self.assertIn('inference_latency_sec_bucket{model="llama", le="0.1"} 2', export_str)
-        self.assertIn('inference_latency_sec_bucket{model="llama", le="inf"} 3', export_str)
+        self.assertIn(
+            'inference_latency_sec_bucket{model="llama", le="0.01"} 1', export_str
+        )
+        self.assertIn(
+            'inference_latency_sec_bucket{model="llama", le="0.05"} 2', export_str
+        )
+        self.assertIn(
+            'inference_latency_sec_bucket{model="llama", le="0.1"} 2', export_str
+        )
+        self.assertIn(
+            'inference_latency_sec_bucket{model="llama", le="inf"} 3', export_str
+        )
         self.assertIn('inference_latency_sec_sum{model="llama"} 0.173', export_str)
         self.assertIn('inference_latency_sec_count{model="llama"} 3', export_str)
 
     async def test_nested_tracing_spans(self) -> None:
         # Create trace spans
-        async with self.tracer.span("parent_stage", attributes={"tier": "gateway"}) as parent:
+        async with self.tracer.span(
+            "parent_stage", attributes={"tier": "gateway"}
+        ) as parent:
             self.assertEqual(parent_span_var.get().span_id, parent.span_id)
-            
-            async with self.tracer.span("child_stage", attributes={"tier": "scheduler"}) as child:
+
+            async with self.tracer.span(
+                "child_stage", attributes={"tier": "scheduler"}
+            ) as child:
                 self.assertEqual(parent_span_var.get().span_id, child.span_id)
                 # Verify trace ID links, and parent span ID references
                 self.assertEqual(child.trace_id, parent.trace_id)
@@ -81,7 +94,7 @@ class TestObservability(unittest.IsolatedAsyncioTestCase):
         # Flush spans manually for testing
         self.tracer.exporter._flush()
         exported = self.tracer.exporter.get_exported_spans()
-        
+
         self.assertEqual(len(exported), 2)
         # Order in exported: child first (completed first), then parent
         self.assertEqual(exported[0].name, "child_stage")
@@ -102,7 +115,7 @@ class TestObservability(unittest.IsolatedAsyncioTestCase):
         self.health.register_probe("vram", check_vram)
 
         healthy, details = await self.health.check_health()
-        
+
         # vram check failed, so overall healthy is False
         self.assertFalse(healthy)
         self.assertEqual(details["gpu"], "UP")
@@ -117,8 +130,9 @@ class TestObservability(unittest.IsolatedAsyncioTestCase):
             return False, "Normal"
 
         self.alerts.add_rule("HighErrorRate", threshold=5.0, check_fn=check_errors)
-        
+
         alerts_triggered = []
+
         def handler(name, msg):
             alerts_triggered.append(name)
 
@@ -137,12 +151,14 @@ class TestObservability(unittest.IsolatedAsyncioTestCase):
 
     def test_execution_profiler_timeline(self) -> None:
         from unittest.mock import patch
-        
+
         # Staggered nanosecond mock timestamps: Start at 0, scheduled at 10ms, batched at 25ms, complete at 30ms
         timestamps = [0, 10_000_000, 25_000_000, 30_000_000]
-        
+
         with patch("time.perf_counter_ns", side_effect=timestamps):
-            timeline = ExecutionTimeline(request_id="req-123", slow_request_threshold_ms=50.0)
+            timeline = ExecutionTimeline(
+                request_id="req-123", slow_request_threshold_ms=50.0
+            )
             timeline.record("scheduled")
             timeline.record("batched")
             timeline.record("complete")
@@ -155,7 +171,7 @@ class TestObservability(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(durations["start_to_scheduled"], 10.0)
         self.assertEqual(durations["scheduled_to_batched"], 15.0)
         self.assertEqual(durations["batched_to_complete"], 5.0)
-        
+
         # Verify it does not trigger slow request warn (duration < 50ms)
         self.assertFalse(timeline.check_slow_request())
 

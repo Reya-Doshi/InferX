@@ -4,6 +4,7 @@ InferX Health Manager.
 
 Monitors hardware telemetry (CPU, GPU, RAM) and generates detailed subsystem health reports.
 """
+
 import asyncio
 from typing import Any, Callable, Coroutine, Optional
 from pydantic import BaseModel, Field
@@ -47,22 +48,25 @@ class HealthReport(BaseModel):
 class HealthManager(IHealthManager):
     """
     Implements structured health verification checks.
-    
+
     Exposes sub-status details for all components and hardware systems.
     """
+
     def __init__(self, vram_watermark: float) -> None:
         self.vram_watermark = vram_watermark
-        
+
         # Categorized callback registries
-        self._providers: dict[str, dict[str, Callable[[], Coroutine[Any, Any, bool]]]] = {
+        self._providers: dict[
+            str, dict[str, Callable[[], Coroutine[Any, Any, bool]]]
+        ] = {
             "workers": {},
             "plugins": {},
             "scheduler": {},
             "batcher": {},
             "queue": {},
-            "models": {}
+            "models": {},
         }
-        
+
         self._last_report: Optional[HealthReport] = None
         self._nvml_initialized = False
         self._initialize_nvml()
@@ -71,14 +75,19 @@ class HealthManager(IHealthManager):
         self,
         name: str,
         check_fn: Callable[[], Coroutine[Any, Any, bool]],
-        domain: str = "workers"
+        domain: str = "workers",
     ) -> None:
         """Registers a named check callback under a specific system domain."""
         if domain not in self._providers:
-            raise ValueError(f"Invalid health domain: {domain}. Choices: {list(self._providers.keys())}")
-        
+            raise ValueError(
+                f"Invalid health domain: {domain}. Choices: {list(self._providers.keys())}"
+            )
+
         self._providers[domain][name] = check_fn
-        logger.info(f"Registered health provider '{name}' in domain '{domain}'", component="health")
+        logger.info(
+            f"Registered health provider '{name}' in domain '{domain}'",
+            component="health",
+        )
 
     async def evaluate_health(self) -> HealthReport:
         """Polls CPU, GPU, RAM, and invokes registered subsystem checks asynchronously."""
@@ -89,7 +98,7 @@ class HealthManager(IHealthManager):
             "scheduler": {"scheduler_loop": "READY"},
             "batcher": {"batcher_aggregator": "READY"},
             "queue": {"priority_queues": "READY"},
-            "models": {"weights_context": "READY"}
+            "models": {"weights_context": "READY"},
         }
 
         # 1. Execute all registered callbacks
@@ -97,14 +106,16 @@ class HealthManager(IHealthManager):
             for name, check_fn in check_dict.items():
                 try:
                     is_healthy = await asyncio.wait_for(check_fn(), timeout=1.0)
-                    domains_results[domain][name] = "HEALTHY" if is_healthy else "UNHEALTHY"
+                    domains_results[domain][name] = (
+                        "HEALTHY" if is_healthy else "UNHEALTHY"
+                    )
                     if not is_healthy:
                         status = "DEGRADED"
                 except Exception as e:
                     logger.error(
                         f"Health check '{name}' in domain '{domain}' failed: {e}",
                         exc_info=True,
-                        component="health"
+                        component="health",
                     )
                     domains_results[domain][name] = f"ERROR: {str(e)}"
                     status = "DEGRADED"
@@ -118,7 +129,7 @@ class HealthManager(IHealthManager):
         if vram_util > self.vram_watermark:
             logger.warning(
                 f"VRAM utilization ({vram_util:.2f}) exceeds high watermark threshold ({self.vram_watermark:.2f})",
-                component="health"
+                component="health",
             )
             status = "DEGRADED"
 
@@ -127,7 +138,7 @@ class HealthManager(IHealthManager):
             ram_utilization=ram_util,
             vram_utilization=vram_util,
             vram_allocated_bytes=vram_usage,
-            vram_total_bytes=vram_max
+            vram_total_bytes=vram_max,
         )
 
         report = HealthReport(
@@ -138,7 +149,7 @@ class HealthManager(IHealthManager):
             scheduler=domains_results["scheduler"],
             batcher=domains_results["batcher"],
             queue=domains_results["queue"],
-            models=domains_results["models"]
+            models=domains_results["models"],
         )
 
         self._last_report = report
@@ -151,7 +162,10 @@ class HealthManager(IHealthManager):
     def _initialize_nvml(self) -> None:
         """Attempts to initialize NVML hardware library binding."""
         if pynvml is None:
-            logger.warning("pynvml not installed. GPU metrics will be simulated.", component="health")
+            logger.warning(
+                "pynvml not installed. GPU metrics will be simulated.",
+                component="health",
+            )
             return
         try:
             pynvml.nvmlInit()
@@ -177,5 +191,7 @@ class HealthManager(IHealthManager):
                 info = pynvml.nvmlDeviceGetMemoryInfo(handle)
                 return int(info.used), int(info.total)
             except Exception as e:
-                logger.error(f"Failed to query GPU memory specs: {e}", component="health")
+                logger.error(
+                    f"Failed to query GPU memory specs: {e}", component="health"
+                )
         return 1073741824, 8589934592  # 1GB used of 8GB total (Simulated)

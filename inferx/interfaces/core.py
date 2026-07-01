@@ -5,6 +5,7 @@ InferX Core Runtime Abstract Interfaces.
 Defines the interface boundaries (Abstract Base Classes) for the runtime core.
 These contracts guarantee loose coupling and enable mock injection during testing.
 """
+
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Coroutine, Type, TypeVar
 
@@ -13,7 +14,7 @@ T = TypeVar("T")
 
 class IConfigLoader(ABC):
     """Responsible for loading, validating, and reloading system configurations asynchronously."""
-    
+
     @abstractmethod
     async def load(self) -> Any:
         """Parses and validates configurations from a static path or environment."""
@@ -27,9 +28,11 @@ class IConfigLoader(ABC):
 
 class IHealthManager(ABC):
     """Monitors system-wide hardware telemetry and process health markers."""
-    
+
     @abstractmethod
-    def register_provider(self, name: str, check_fn: Callable[[], Coroutine[Any, Any, bool]]) -> None:
+    def register_provider(
+        self, name: str, check_fn: Callable[[], Coroutine[Any, Any, bool]]
+    ) -> None:
         """Registers a named service callback to include in the periodic health loop."""
         pass
 
@@ -46,7 +49,7 @@ class IHealthManager(ABC):
 
 class IRuntimeSupervisor(ABC):
     """Monitors asynchronous execution workers and orchestrates process recovery."""
-    
+
     @abstractmethod
     async def start(self) -> None:
         """Starts the main worker monitor loops and verification tasks."""
@@ -65,7 +68,7 @@ class IRuntimeSupervisor(ABC):
 
 class IRuntimeLifecycle(ABC):
     """Handles OS signal propagation, lifecycle states, and graceful teardown."""
-    
+
     @abstractmethod
     async def run(self) -> None:
         """Starts the bootstrap sequence and enters the main execution loop."""
@@ -84,7 +87,7 @@ class IRuntimeLifecycle(ABC):
 
 class IDIContainer(ABC):
     """Dependency injection container interface supporting providers."""
-    
+
     @abstractmethod
     def register(self, interface: Type[T], provider: Any) -> None:
         """Binds a provider to an interface type."""

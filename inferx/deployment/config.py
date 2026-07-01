@@ -3,7 +3,7 @@ import os
 import json
 import logging
 import base64
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 from inferx.deployment.interfaces import IConfigManager
 
 logger = logging.getLogger("inferx.deployment.config")
@@ -33,15 +33,17 @@ class RuntimeConfigurationManager(IConfigManager):
             if not os.path.exists(filepath):
                 logger.warning(f"Config file not found: {filepath}")
                 return
-                
+
             with open(filepath, "r") as f:
                 data = json.load(f)
-                
+
             for key, new_val in data.items():
                 old_val = self._config.get(key)
                 if old_val != new_val:
                     self._update_value(key, new_val)
-                    logger.info(f"Hot reloaded configuration key '{key}': {old_val} -> {new_val}")
+                    logger.info(
+                        f"Hot reloaded configuration key '{key}': {old_val} -> {new_val}"
+                    )
         except Exception as e:
             logger.error(f"Failed to load config file {filepath}: {e}")
 

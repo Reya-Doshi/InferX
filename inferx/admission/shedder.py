@@ -5,9 +5,9 @@ InferX Load Shedders & Circuit Breakers.
 Implements telemetry-aware backpressure evaluations, priority-aware load shedding,
 and standard Circuit Breakers.
 """
+
 import time
 import threading
-from typing import Optional
 
 from inferx.core.context import RuntimeContext
 from inferx.utils.logging import get_logger
@@ -19,11 +19,12 @@ class BackpressureController:
     """
     Evaluates hardware metrics to detect system load bottlenecks.
     """
+
     def __init__(
         self,
         max_vram_ratio: float = 0.90,
         max_cpu_ratio: float = 0.85,
-        max_active_requests: int = 1000
+        max_active_requests: int = 1000,
     ) -> None:
         self.max_vram_ratio = max_vram_ratio
         self.max_cpu_ratio = max_cpu_ratio
@@ -32,12 +33,12 @@ class BackpressureController:
     def is_congested(self, context: RuntimeContext) -> bool:
         """
         Evaluates system telemetry against configured limits.
-        
+
         Returns:
             True if any limit threshold is violated.
         """
         telemetry = context.get_telemetry()
-        
+
         vram = telemetry.get("vram_utilization", 0.0)
         cpu = telemetry.get("cpu_utilization", 0.0)
         active = telemetry.get("active_requests", 0)
@@ -55,13 +56,14 @@ class LoadShedder:
     """
     Implements priority-aware load shedding to drop low-value traffic under load.
     """
+
     def __init__(self, backpressure_controller: BackpressureController) -> None:
         self.controller = backpressure_controller
 
     def should_shed(self, priority: int, context: RuntimeContext) -> bool:
         """
         Evaluates if the request should be shed based on its priority and system load.
-        
+
         Priority mapping:
             - Priority < 2 (Low): Shed if system is congested.
             - Priority < 4 (Medium): Shed if system is highly congested (VRAM >= watermark + 5%).
@@ -92,17 +94,18 @@ class LoadShedder:
 class CircuitBreaker:
     """
     Implements a Circuit Breaker pattern to fail fast when errors spike.
-    
+
     States:
         - CLOSED: Traffic flows normally.
         - OPEN: Rejects all requests immediately.
         - HALF_OPEN: Admits a limited number of requests to probe downstream health.
     """
+
     def __init__(
         self,
         failure_threshold: int = 5,
         cooldown_sec: float = 5.0,
-        probe_success_threshold: int = 3
+        probe_success_threshold: int = 3,
     ) -> None:
         self.failure_threshold = failure_threshold
         self.cooldown_sec = cooldown_sec
@@ -124,7 +127,10 @@ class CircuitBreaker:
                     self.state = "HALF_OPEN"
                     self.successes = 0
                     self.last_state_change = now
-                    logger.warning("Circuit Breaker transitioned to HALF_OPEN. Probing health.", component="circuit_breaker")
+                    logger.warning(
+                        "Circuit Breaker transitioned to HALF_OPEN. Probing health.",
+                        component="circuit_breaker",
+                    )
                     return True
                 return False
             return True
@@ -138,7 +144,10 @@ class CircuitBreaker:
                     self.state = "CLOSED"
                     self.failures = 0
                     self.last_state_change = time.time()
-                    logger.info("Circuit Breaker transitioned to CLOSED. Downstream recovered.", component="circuit_breaker")
+                    logger.info(
+                        "Circuit Breaker transitioned to CLOSED. Downstream recovered.",
+                        component="circuit_breaker",
+                    )
 
     def record_failure(self) -> None:
         """Records a failure, tripping the circuit if threshold is hit."""
@@ -148,4 +157,7 @@ class CircuitBreaker:
                 if self.failures >= self.failure_threshold:
                     self.state = "OPEN"
                     self.last_state_change = time.time()
-                    logger.error("Circuit Breaker transitioned to OPEN. Dropping downstream calls.", component="circuit_breaker")
+                    logger.error(
+                        "Circuit Breaker transitioned to OPEN. Dropping downstream calls.",
+                        component="circuit_breaker",
+                    )

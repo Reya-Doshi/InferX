@@ -1,6 +1,6 @@
 # inferx/performance/report.py
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 
 class ReportGenerator:
@@ -30,7 +30,7 @@ class ReportGenerator:
             f"| GPU Avg Utilization | {metrics.get('gpu_avg', 0.0):.2f}% |",
             f"| Avg Batch Size | {metrics.get('batch_size_avg', 0.0):.2f} |",
             f"| Avg Queue Delay | {metrics.get('queue_delay_avg_ms', 0.0):.2f} ms |",
-            ""
+            "",
         ]
         return "\n".join(lines)
 

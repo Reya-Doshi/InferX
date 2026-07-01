@@ -5,6 +5,7 @@ InferX Event Bus Metrics Collector.
 Instruments counters and gauges tracking message throughput, delivery rates,
 and queue bottlenecks.
 """
+
 from typing import Dict
 import threading
 
@@ -12,9 +13,10 @@ import threading
 class EventBusMetrics:
     """
     Centralized collector tracking event telemetry metrics.
-    
+
     Provides thread-safe atomic counters for operational monitoring.
     """
+
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._published_counts: Dict[str, int] = {}
@@ -25,12 +27,16 @@ class EventBusMetrics:
     def record_publish(self, event_type: str) -> None:
         """Increments event publish counter."""
         with self._lock:
-            self._published_counts[event_type] = self._published_counts.get(event_type, 0) + 1
+            self._published_counts[event_type] = (
+                self._published_counts.get(event_type, 0) + 1
+            )
 
     def record_delivery(self, event_type: str) -> None:
         """Increments event delivery counter."""
         with self._lock:
-            self._delivered_counts[event_type] = self._delivered_counts.get(event_type, 0) + 1
+            self._delivered_counts[event_type] = (
+                self._delivered_counts.get(event_type, 0) + 1
+            )
 
     def record_failure(self, event_type: str) -> None:
         """Increments event delivery failure counter."""
@@ -54,5 +60,5 @@ class EventBusMetrics:
                 "published": dict(self._published_counts),
                 "delivered": dict(self._delivered_counts),
                 "failed": dict(self._failed_counts),
-                "queue_depths": dict(self._queue_depths)
+                "queue_depths": dict(self._queue_depths),
             }

@@ -9,7 +9,9 @@ from inferx.performance.interfaces import ILoadGenerator
 class LoadGenerator(ILoadGenerator):
     """Simulates concurrent client traffic, bursts, and steady request generation against target handlers."""
 
-    def __init__(self, request_fn: Optional[Callable[[], Coroutine[Any, Any, Any]]] = None) -> None:
+    def __init__(
+        self, request_fn: Optional[Callable[[], Coroutine[Any, Any, Any]]] = None
+    ) -> None:
         # Default mock request function if none provided
         self.request_fn = request_fn or self._default_mock_request
 
@@ -17,12 +19,14 @@ class LoadGenerator(ILoadGenerator):
         # Simulates 5ms to 15ms request processing time
         await asyncio.sleep(random.uniform(0.005, 0.015))
 
-    async def generate_steady_load(self, rps: float, duration_sec: float) -> List[float]:
+    async def generate_steady_load(
+        self, rps: float, duration_sec: float
+    ) -> List[float]:
         """Generates steady RPS stream of requests using asynchronous tasks."""
         latencies: List[float] = []
-        interval = 1.0 / rps
+        1.0 / rps
         start_time = time.perf_counter()
-        
+
         async def run_single_request() -> None:
             t0 = time.perf_counter()
             try:
@@ -37,7 +41,7 @@ class LoadGenerator(ILoadGenerator):
             elapsed = time.perf_counter() - start_time
             if elapsed >= duration_sec:
                 break
-            
+
             # Catch up with target counts based on elapsed duration
             expected_sent = int(elapsed * rps)
             if sent_count < expected_sent:
@@ -45,18 +49,20 @@ class LoadGenerator(ILoadGenerator):
                 for _ in range(batch):
                     tasks.append(asyncio.create_task(run_single_request()))
                 sent_count += batch
-                
+
             await asyncio.sleep(0.002)
 
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
-            
+
         return latencies
 
-    async def generate_burst_load(self, concurrent_users: int, burst_size: int) -> List[float]:
+    async def generate_burst_load(
+        self, concurrent_users: int, burst_size: int
+    ) -> List[float]:
         """Dispatches large batches of concurrent users in parallel to simulate traffic spikes."""
         latencies: List[float] = []
-        
+
         async def run_single_request() -> None:
             t0 = time.perf_counter()
             try:

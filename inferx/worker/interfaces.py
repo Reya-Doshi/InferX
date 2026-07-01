@@ -5,14 +5,16 @@ InferX Worker Runtime Interfaces.
 Defines status enums, information structures, IPC message models,
 and core worker interfaces.
 """
+
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List, Optional
-from pydantic import BaseModel, Field
+from typing import List
+from pydantic import BaseModel
 
 
 class WorkerStatus(Enum):
     """Execution status states for worker processes."""
+
     STARTING = "STARTING"
     READY = "READY"
     BUSY = "BUSY"
@@ -22,6 +24,7 @@ class WorkerStatus(Enum):
 
 class WorkerInfo(BaseModel):
     """Data model containing worker status and host assignment details."""
+
     worker_id: str
     gpu_id: int
     cpu_cores: List[int]
@@ -34,9 +37,10 @@ class WorkerInfo(BaseModel):
 class IPCMessage(BaseModel):
     """
     Data model representing a metadata packet sent across the IPC queue.
-    
+
     Contains offsets pointing to the payload data stored in the SharedMemory pool.
     """
+
     request_id: str
     offset: int
     size: int

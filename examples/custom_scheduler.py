@@ -35,15 +35,21 @@ async def run_custom_scheduler_example() -> None:
 
     # Push requests
     print("Pushing requests req-A, req-B, req-C sequentially...")
-    policy.push(ScheduledRequest(
-        request_id="req-A", tenant_id="default", priority=1, payload="data-A"
-    ))
-    policy.push(ScheduledRequest(
-        request_id="req-B", tenant_id="default", priority=1, payload="data-B"
-    ))
-    policy.push(ScheduledRequest(
-        request_id="req-C", tenant_id="default", priority=1, payload="data-C"
-    ))
+    policy.push(
+        ScheduledRequest(
+            request_id="req-A", tenant_id="default", priority=1, payload="data-A"
+        )
+    )
+    policy.push(
+        ScheduledRequest(
+            request_id="req-B", tenant_id="default", priority=1, payload="data-B"
+        )
+    )
+    policy.push(
+        ScheduledRequest(
+            request_id="req-C", tenant_id="default", priority=1, payload="data-C"
+        )
+    )
 
     # Pop requests and assert LIFO ordering (C, then B, then A)
     print("\nPopping requests sequentially:")

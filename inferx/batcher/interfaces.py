@@ -5,9 +5,10 @@ InferX Batcher Interfaces.
 Defines the Batch data model, the worker callback interface (IBatchHandler),
 and the core IBatcher life-cycle interface.
 """
+
 from abc import ABC, abstractmethod
-from typing import Any, List
-from pydantic import BaseModel, Field
+from typing import List
+from pydantic import BaseModel
 
 from inferx.scheduler.interfaces import ScheduledRequest
 
@@ -15,9 +16,10 @@ from inferx.scheduler.interfaces import ScheduledRequest
 class Batch(BaseModel):
     """
     Data model representing a merged batch of scheduled inference requests.
-    
+
     Contains input tensor matrices and padding dimensions.
     """
+
     batch_id: str
     requests: List[ScheduledRequest]
     padded_tensors: List[List[int]]

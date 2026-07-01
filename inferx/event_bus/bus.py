@@ -5,10 +5,11 @@ InferX Event Bus Engine.
 Implements the async publish/subscribe orchestration, prioritized queues dispatching,
 and historical event replays.
 """
+
 import asyncio
 from datetime import datetime, timezone
 import uuid
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from inferx.event_bus.envelope import EventEnvelope
 from inferx.event_bus.interfaces import IEventBus, IEventPersister, IDeadLetterQueue
@@ -21,9 +22,10 @@ logger = get_logger("event_bus")
 class InMemoryEventPersister(IEventPersister):
     """
     In-memory implementation of IEventPersister.
-    
+
     Acts as a ring-buffered repository for historical event queries.
     """
+
     def __init__(self, capacity: int = 10000) -> None:
         self.capacity = capacity
         self._store: List[EventEnvelope] = []
@@ -42,7 +44,10 @@ class InMemoryEventPersister(IEventPersister):
 
 class Subscription:
     """Represents a registered consumer queue and target filters."""
-    def __init__(self, sub_id: str, event_type: str, queue: Any, is_priority: bool) -> None:
+
+    def __init__(
+        self, sub_id: str, event_type: str, queue: Any, is_priority: bool
+    ) -> None:
         self.sub_id = sub_id
         self.event_type = event_type
         self.queue = queue
@@ -52,28 +57,29 @@ class Subscription:
 class EventBus(IEventBus):
     """
     Asynchronous event bus orchestrator.
-    
+
     Enables priority queue dispatches, event log storage, and non-blocking publishers.
     """
+
     def __init__(
         self,
         persister: Optional[IEventPersister] = None,
         dlq: Optional[IDeadLetterQueue] = None,
         metrics: Optional[EventBusMetrics] = None,
-        queue_capacity: int = 5000
+        queue_capacity: int = 5000,
     ) -> None:
         self.persister = persister or InMemoryEventPersister()
         self.dlq = dlq
         self.metrics = metrics or EventBusMetrics()
         self.queue_capacity = queue_capacity
-        
+
         self._subscriptions: Dict[str, Subscription] = {}
         self._lock = asyncio.Lock()
 
     async def publish(self, envelope: EventEnvelope) -> None:
         """
         Routes the event envelope to matching subscriber queues in a non-blocking manner.
-        
+
         Appends the event to the persistence layer.
         """
         # 1. Log event details to persistent storage
@@ -99,24 +105,24 @@ class EventBus(IEventBus):
                 logger.error(
                     f"Subscriber queue {sub.sub_id} full. Dropping message.",
                     event_id=envelope.event_id,
-                    component="event_bus"
+                    component="event_bus",
                 )
                 self.metrics.record_failure(envelope.event_type)
-                
+
                 # Route overflow events to DLQ
                 if self.dlq:
                     # Run in background to prevent publisher blocking
                     asyncio.create_task(
                         self.dlq.route_to_dlq(
                             envelope,
-                            reason=f"Queue capacity overflow on subscription {sub.sub_id}"
+                            reason=f"Queue capacity overflow on subscription {sub.sub_id}",
                         )
                     )
 
     def subscribe(self, event_type: str, priority_queue: bool = False) -> str:
         """Registers a queue channel to retrieve events of a specific type."""
         sub_id = str(uuid.uuid4())
-        
+
         # Instantiate correct queue class matching priority requirements
         if priority_queue:
             queue = asyncio.PriorityQueue(maxsize=self.queue_capacity)
@@ -127,12 +133,15 @@ class EventBus(IEventBus):
             sub_id=sub_id,
             event_type=event_type,
             queue=queue,
-            is_priority=priority_queue
+            is_priority=priority_queue,
         )
-        
+
         # Lock-free register
         self._subscriptions[sub_id] = sub
-        logger.info(f"Subscriber registered. ID: {sub_id} (Type: {event_type})", component="event_bus")
+        logger.info(
+            f"Subscriber registered. ID: {sub_id} (Type: {event_type})",
+            component="event_bus",
+        )
         return sub_id
 
     def get_queue(self, sub_id: str) -> Any:
@@ -161,7 +170,7 @@ class EventBus(IEventBus):
 
         logger.info(
             f"Replaying {len(historical_envelopes)} historical events for subscriber {sub_id}.",
-            component="event_bus"
+            component="event_bus",
         )
 
         for envelope in historical_envelopes:

@@ -5,17 +5,19 @@ InferX IPC Shared Memory Pool.
 Implements a high-performance, zero-copy shared memory data exchange pool.
 Allows transferring large payload tensors without Python serialization overhead.
 """
+
 from multiprocessing.shared_memory import SharedMemory
 import threading
-from typing import List, Optional
+from typing import List
 
 
 class SharedMemoryPool:
     """
     Wrapper around multiprocessing.shared_memory.SharedMemory.
-    
+
     Provides simple offset-based reads and writes.
     """
+
     def __init__(self, name: str, size: int, create: bool = False) -> None:
         self.name = name
         self.size = size
@@ -53,22 +55,25 @@ class SharedMemoryPool:
 class SharedMemoryAllocator:
     """
     Thread-safe offset allocator managing slots within the SharedMemoryPool.
-    
+
     Operates in the parent process to coordinate memory slots without
     multi-process lock contentions.
     """
-    def __init__(self, pool_size: int = 64 * 1024 * 1024, slot_size: int = 64 * 1024) -> None:
+
+    def __init__(
+        self, pool_size: int = 64 * 1024 * 1024, slot_size: int = 64 * 1024
+    ) -> None:
         self.pool_size = pool_size
         self.slot_size = slot_size
         self.num_slots = pool_size // slot_size
-        
+
         self._free_slots: List[int] = list(range(self.num_slots))
         self._lock = threading.Lock()
 
     def allocate(self) -> int:
         """
         Allocates a slot, returning its buffer offset (O(1) complexity).
-        
+
         Raises:
             BufferError: If all slots are currently in use.
         """

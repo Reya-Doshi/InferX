@@ -5,12 +5,13 @@ InferX Structured JSON Logging Utility.
 Configures the standard library logging pipeline to output structured JSON strings,
 automatically harvesting contextual telemetry parameters from Task/Thread-local ContextVars.
 """
+
 from datetime import datetime, timezone
 import json
 import logging
 import sys
 import contextvars
-from typing import Any, Optional
+from typing import Any
 
 # ContextVar storing telemetry metadata (e.g. trace_id, request_id, model_name)
 telemetry_context: contextvars.ContextVar[dict[str, Any]] = contextvars.ContextVar(
@@ -27,20 +28,23 @@ TELEMETRY_KEYS = [
     "scheduler_id",
     "runtime_state",
     "model_name",
-    "tenant_id"
+    "tenant_id",
 ]
 
 
 class JSONFormatter(logging.Formatter):
     """
     Custom formatter that serializes log records into structured JSON lines.
-    
+
     Harvests variables from active contextvars and explicit extra logging parameters.
     """
+
     def format(self, record: logging.LogRecord) -> str:
         # 1. Base log structure
         log_data = {
-            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
+            "timestamp": datetime.fromtimestamp(
+                record.created, tz=timezone.utc
+            ).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -68,10 +72,25 @@ class JSONFormatter(logging.Formatter):
         # 5. Harvest any generic custom parameters passed to the log
         for key, val in record.__dict__.items():
             if key not in TELEMETRY_KEYS and key not in [
-                "args", "created", "msg", "levelname", "levelno", "pathname",
-                "filename", "module", "exc_info", "exc_text", "stack_info",
-                "lineno", "funcName", "msecs", "relativeCreated", "thread",
-                "threadName", "processName", "process"
+                "args",
+                "created",
+                "msg",
+                "levelname",
+                "levelno",
+                "pathname",
+                "filename",
+                "module",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+                "lineno",
+                "funcName",
+                "msecs",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "processName",
+                "process",
             ]:
                 log_data[key] = val
 
@@ -83,6 +102,7 @@ class InferXLogger(logging.Logger):
     Extended logger that supports custom level (FATAL) and wraps
     context keys from contextvars into standard log records.
     """
+
     FATAL = 50
 
     def fatal(self, msg: Any, *args: Any, **kwargs: Any) -> None:
@@ -99,7 +119,7 @@ class InferXLogger(logging.Logger):
         extra: Any = None,
         stack_info: bool = False,
         stacklevel: int = 1,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         # Extract direct custom keyword arguments and move them into the extra dict
         if kwargs:
@@ -116,7 +136,7 @@ class InferXLogger(logging.Logger):
             exc_info=exc_info,
             extra=extra,
             stack_info=stack_info,
-            stacklevel=stacklevel
+            stacklevel=stacklevel,
         )
 
 
@@ -127,13 +147,13 @@ logging.setLoggerClass(InferXLogger)
 def configure_logging(level: str = "INFO") -> logging.Logger:
     """
     Bootstraps the root logging engine.
-    
+
     Replaces default console handlers with the JSONFormatter and redirects
     output to stdout to prevent buffering delays inside containerized environments.
     """
     root_logger = logging.getLogger("inferx")
     root_logger.setLevel(level.upper())
-    
+
     # Avoid duplicate handlers if re-called
     if root_logger.handlers:
         return root_logger
@@ -142,7 +162,7 @@ def configure_logging(level: str = "INFO") -> logging.Logger:
     handler.setFormatter(JSONFormatter())
     root_logger.addHandler(handler)
     root_logger.propagate = False
-    
+
     return root_logger
 
 

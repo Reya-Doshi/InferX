@@ -10,20 +10,20 @@ async def run_multi_node_example() -> None:
 
     # Configure Node 1 (Seed Node)
     mgr1 = ClusterManager(
-        node_id="node-1", host="127.0.0.1", port=19201,
-        peers=[
-            {"node_id": "node-2", "host": "127.0.0.1", "port": 19202}
-        ],
-        hosted_models=["llama"]
+        node_id="node-1",
+        host="127.0.0.1",
+        port=19201,
+        peers=[{"node_id": "node-2", "host": "127.0.0.1", "port": 19202}],
+        hosted_models=["llama"],
     )
 
     # Configure Node 2
     mgr2 = ClusterManager(
-        node_id="node-2", host="127.0.0.1", port=19202,
-        peers=[
-            {"node_id": "node-1", "host": "127.0.0.1", "port": 19201}
-        ],
-        hosted_models=["gpt"]
+        node_id="node-2",
+        host="127.0.0.1",
+        port=19202,
+        peers=[{"node_id": "node-1", "host": "127.0.0.1", "port": 19201}],
+        hosted_models=["gpt"],
     )
 
     # Start RPC servers
@@ -53,12 +53,14 @@ async def run_multi_node_example() -> None:
     # Query leader status
     leader_id = mgr2.election.get_leader()
     print(f"Cluster Leader elected  : {leader_id}")
-    
+
     # Print membership statuses
     active_nodes = mgr1.registry.get_active_nodes()
     print("Active Cluster Nodes Registry:")
     for node in active_nodes:
-        print(f"  - Node {node.node_id} ({node.host}:{node.port}) Status: {node.status.name} Models: {node.hosted_models}")
+        print(
+            f"  - Node {node.node_id} ({node.host}:{node.port}) Status: {node.status.name} Models: {node.hosted_models}"
+        )
 
     # Graceful shutdown
     print("Shutting down cluster nodes...")

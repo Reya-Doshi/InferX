@@ -22,7 +22,9 @@ async def run_single_node_example() -> None:
     def on_batch_ready(event: Dict[str, Any]) -> None:
         batch_id = event.get("batch_id")
         requests = event.get("requests", [])
-        print(f"[Model Runtime] Processing batch {batch_id} (Size: {len(requests)} requests)")
+        print(
+            f"[Model Runtime] Processing batch {batch_id} (Size: {len(requests)} requests)"
+        )
         for req in requests:
             print(f"  - Request {req['request_id']} executed on GPU stream 0")
 
@@ -38,7 +40,7 @@ async def run_single_node_example() -> None:
             priority=1,
             deadline_ms=500.0,
             token_count=16,
-            tenant_id="default"
+            tenant_id="default",
         )
         # Add to admission queue
         await admission.submit(req)

@@ -4,6 +4,7 @@ InferX Scheduler Metrics.
 
 Tracks queue depths, task wait durations, and starvation alarms.
 """
+
 import threading
 from typing import Any
 
@@ -11,9 +12,10 @@ from typing import Any
 class SchedulerMetrics:
     """
     Central collector tracking scheduler stats.
-    
+
     Provides thread-safe atomic counters for operational monitoring.
     """
+
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._enqueue_total = 0
@@ -40,10 +42,14 @@ class SchedulerMetrics:
     def get_snapshot(self) -> dict[str, Any]:
         """Returns a snapshot copy of current metrics values."""
         with self._lock:
-            avg_wait = (self._total_wait_time_ns / self._dequeue_total) if self._dequeue_total > 0 else 0
+            avg_wait = (
+                (self._total_wait_time_ns / self._dequeue_total)
+                if self._dequeue_total > 0
+                else 0
+            )
             return {
                 "enqueue_total": self._enqueue_total,
                 "dequeue_total": self._dequeue_total,
                 "starvation_warnings": self._starvation_warnings,
-                "average_wait_time_ms": avg_wait / 1_000_000.0
+                "average_wait_time_ms": avg_wait / 1_000_000.0,
             }

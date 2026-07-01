@@ -5,12 +5,14 @@ InferX Typed Event System.
 Declares the Pydantic schemas representing concrete payload parameters
 for core lifecycle and execution events.
 """
+
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class BaseEvent(BaseModel):
     """Base event payload interface ensuring clean Pydantic validations."""
+
     model_config = {"frozen": True}
 
 

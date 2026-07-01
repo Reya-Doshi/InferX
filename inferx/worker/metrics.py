@@ -4,6 +4,7 @@ InferX Worker Metrics.
 
 Tracks worker process lifetimes, telemetry checks, VRAM levels, and execution durations.
 """
+
 from typing import Any, Dict
 import threading
 
@@ -12,6 +13,7 @@ class WorkerMetrics:
     """
     Thread-safe metrics collector capturing worker process health and telemetry.
     """
+
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._restarts = 0
@@ -38,10 +40,14 @@ class WorkerMetrics:
     def get_snapshot(self) -> dict[str, Any]:
         """Returns a snapshot copy of current metrics values."""
         with self._lock:
-            avg_exec = (self._total_execution_time_ns / self._executions_count / 1e6) if self._executions_count > 0 else 0.0
+            avg_exec = (
+                (self._total_execution_time_ns / self._executions_count / 1e6)
+                if self._executions_count > 0
+                else 0.0
+            )
             return {
                 "restart_total": self._restarts,
                 "executions_total": self._executions_count,
                 "average_execution_latency_ms": avg_exec,
-                "last_heartbeat_delays_sec": dict(self._last_heartbeat_delays)
+                "last_heartbeat_delays_sec": dict(self._last_heartbeat_delays),
             }

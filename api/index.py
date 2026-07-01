@@ -2,6 +2,7 @@
 import json
 from typing import Any, Dict
 
+
 def app(environ: Dict[str, Any], start_response: Any) -> Any:
     """WSGI handler for Vercel Serverless Function deployment."""
     path = environ.get("PATH_INFO", "/")
@@ -21,11 +22,11 @@ def app(environ: Dict[str, Any], start_response: Any) -> Any:
                     "index": 0,
                     "message": {
                         "role": "assistant",
-                        "content": "Hello! This is a serverless completion response from InferX running on Vercel."
+                        "content": "Hello! This is a serverless completion response from InferX running on Vercel.",
                     },
-                    "finish_reason": "stop"
+                    "finish_reason": "stop",
                 }
-            ]
+            ],
         }
         status = "200 OK"
     else:
@@ -36,14 +37,14 @@ def app(environ: Dict[str, Any], start_response: Any) -> Any:
 
     # Encode response body
     response_data = json.dumps(response_body).encode("utf-8")
-    
+
     # Headers
     response_headers = [
         ("Content-Type", "application/json"),
         ("Content-Length", str(len(response_data))),
         ("Access-Control-Allow-Origin", "*"),
         ("Access-Control-Allow-Headers", "*"),
-        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
     ]
 
     # Handle HTTP OPTIONS for preflight requests

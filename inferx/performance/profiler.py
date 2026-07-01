@@ -1,10 +1,8 @@
 # inferx/performance/profiler.py
-import gc
-import sys
 import threading
 import time
 import tracemalloc
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 
 class RuntimeProfiler:
@@ -21,13 +19,12 @@ class RuntimeProfiler:
         self._start_time = time.perf_counter()
         self._cpu_start = time.process_time()
         tracemalloc.start()
-        logger_name = "inferx.performance.profiler"
-        
+
     def stop(self) -> Dict[str, Any]:
         """Stops allocation tracing and compiles execution profiling metrics."""
         elapsed = max(0.001, time.perf_counter() - self._start_time)
         cpu_time = time.process_time() - self._cpu_start
-        
+
         # Get memory allocation metrics
         current, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
@@ -44,5 +41,5 @@ class RuntimeProfiler:
             "cpu_utilization_percent": min(100.0, cpu_utilization),
             "current_memory_bytes": current,
             "peak_memory_bytes": peak,
-            "active_threads": active_threads
+            "active_threads": active_threads,
         }

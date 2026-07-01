@@ -5,11 +5,10 @@ InferX Admission Controller Test Suite.
 Verifies Token Bucket limits, priority-aware load shedders, CircuitBreaker state loops,
 and concurrency safety.
 """
+
 import asyncio
 import unittest
-from typing import Dict
 
-from inferx.admission.interfaces import AdmissionVerdict
 from inferx.admission.limiter import TokenBucketLimiter, LeakyBucketLimiter
 from inferx.admission.manager import AdmissionManager
 from inferx.admission.metrics import AdmissionMetrics
@@ -28,35 +27,39 @@ class TestAdmissionController(unittest.IsolatedAsyncioTestCase):
         self.context.update_telemetry(vram_util=0.5, cpu_util=0.4, avg_queue_lat=0.0)
         for _ in range(5):
             self.context.increment_active_requests()
-        
+
         # 2 tokens capacity, refills 1 token per second
         self.limiter = TokenBucketLimiter(
             global_capacity=2.0,
             global_refill_rate=1.0,
-            tenant_configs={"tenant-A": (1.0, 1.0)}  # Tenant A capacity is 1
+            tenant_configs={"tenant-A": (1.0, 1.0)},  # Tenant A capacity is 1
         )
-        
-        self.backpressure = BackpressureController(max_vram_ratio=0.85, max_cpu_ratio=0.8)
+
+        self.backpressure = BackpressureController(
+            max_vram_ratio=0.85, max_cpu_ratio=0.8
+        )
         self.shedder = LoadShedder(self.backpressure)
         self.circuit_breaker = CircuitBreaker(failure_threshold=3, cooldown_sec=1.0)
         self.metrics = AdmissionMetrics()
         self.scheduler = Scheduler(FIFOPolicy())
-        
+
         self.manager = AdmissionManager(
             context=self.context,
             limiter=self.limiter,
             shedder=self.shedder,
             circuit_breaker=self.circuit_breaker,
             metrics=self.metrics,
-            scheduler=self.scheduler
+            scheduler=self.scheduler,
         )
 
-    def build_request(self, request_id: str, tenant_id: str = "tenant-global", priority: int = 1) -> ScheduledRequest:
+    def build_request(
+        self, request_id: str, tenant_id: str = "tenant-global", priority: int = 1
+    ) -> ScheduledRequest:
         return ScheduledRequest(
             request_id=request_id,
             tenant_id=tenant_id,
             priority=priority,
-            payload=b"test_payload"
+            payload=b"test_payload",
         )
 
     async def test_token_bucket_limits(self) -> None:
@@ -143,7 +146,7 @@ class TestAdmissionController(unittest.IsolatedAsyncioTestCase):
     async def test_leaky_bucket_limiter(self) -> None:
         # Capacity is 2, leaks 1 token per 100ms
         leaky = LeakyBucketLimiter(capacity=2, leak_interval_sec=0.1)
-        
+
         self.assertTrue(leaky.consume())
         self.assertTrue(leaky.consume())
         # 3rd should fail

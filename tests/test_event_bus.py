@@ -5,12 +5,12 @@ InferX Event Bus Test Suite.
 Verifies async publishing, wildcard subscriptions, PriorityQueue sorting,
 historical event replays, and Dead Letter Queue (DLQ) overflow redirection.
 """
+
 import asyncio
 import unittest
 from datetime import datetime, timezone
-import time
 
-from inferx.event_bus.bus import EventBus, InMemoryEventPersister
+from inferx.event_bus.bus import EventBus
 from inferx.event_bus.dlq import DeadLetterQueue
 from inferx.event_bus.envelope import EventEnvelope
 from inferx.event_bus.events import RequestReceived, BatchCreated, WorkerFailed
@@ -32,7 +32,7 @@ class TestEventBus(unittest.IsolatedAsyncioTestCase):
             request_id="req-111",
             model_name="llama-3-8b",
             tenant_id="customer-a",
-            payload_size_bytes=1024
+            payload_size_bytes=1024,
         )
         envelope = EventEnvelope.create_from_payload(payload, priority=2)
 
@@ -42,7 +42,7 @@ class TestEventBus(unittest.IsolatedAsyncioTestCase):
         # Verify reception
         self.assertEqual(queue.qsize(), 1)
         received = await queue.get()
-        
+
         self.assertEqual(received.event_type, "RequestReceived")
         self.assertEqual(received.payload.request_id, "req-111")
         self.assertEqual(received.priority, 2)
@@ -52,21 +52,26 @@ class TestEventBus(unittest.IsolatedAsyncioTestCase):
         sub_id = self.bus.subscribe("*")
         queue = self.bus.get_queue(sub_id)
 
-        e1 = EventEnvelope.create_from_payload(RequestReceived(
-            request_id="req-222", model_name="llama", tenant_id="t", payload_size_bytes=1
-        ))
-        e2 = EventEnvelope.create_from_payload(BatchCreated(
-            batch_id="batch-123", batch_size=4, model_name="llama"
-        ))
+        e1 = EventEnvelope.create_from_payload(
+            RequestReceived(
+                request_id="req-222",
+                model_name="llama",
+                tenant_id="t",
+                payload_size_bytes=1,
+            )
+        )
+        e2 = EventEnvelope.create_from_payload(
+            BatchCreated(batch_id="batch-123", batch_size=4, model_name="llama")
+        )
 
         await self.bus.publish(e1)
         await self.bus.publish(e2)
 
         self.assertEqual(queue.qsize(), 2)
-        
+
         r1 = await queue.get()
         r2 = await queue.get()
-        
+
         self.assertEqual(r1.event_type, "RequestReceived")
         self.assertEqual(r2.event_type, "BatchCreated")
 
@@ -77,8 +82,10 @@ class TestEventBus(unittest.IsolatedAsyncioTestCase):
 
         # Create envelopes with different priorities
         # Note: High priority value must be dequeued first
-        payload = RequestReceived(request_id="req", model_name="m", tenant_id="t", payload_size_bytes=1)
-        
+        payload = RequestReceived(
+            request_id="req", model_name="m", tenant_id="t", payload_size_bytes=1
+        )
+
         low_priority = EventEnvelope.create_from_payload(payload, priority=1)
         high_priority = EventEnvelope.create_from_payload(payload, priority=5)
         medium_priority = EventEnvelope.create_from_payload(payload, priority=3)
@@ -101,7 +108,7 @@ class TestEventBus(unittest.IsolatedAsyncioTestCase):
 
     async def test_historical_event_replay(self) -> None:
         start_ns = int(datetime.now(timezone.utc).timestamp() * 1e9)
-        
+
         # Publish some events
         payload = BatchCreated(batch_id="b-1", batch_size=2, model_name="m")
         e1 = EventEnvelope.create_from_payload(payload)
@@ -116,18 +123,18 @@ class TestEventBus(unittest.IsolatedAsyncioTestCase):
         # Create new subscriber and replay events
         sub_id = self.bus.subscribe("BatchCreated")
         queue = self.bus.get_queue(sub_id)
-        
+
         self.assertEqual(queue.qsize(), 0)
-        
+
         # Replay
         await self.bus.replay(start_ns, sub_id)
-        
+
         self.assertEqual(queue.qsize(), 2)
 
     async def test_dlq_queue_overflow_redirection(self) -> None:
         # Setup small queue capacity to trigger overflow
         overflow_bus = EventBus(dlq=self.dlq, queue_capacity=1)
-        
+
         sub_id = overflow_bus.subscribe("WorkerFailed")
         queue = overflow_bus.get_queue(sub_id)
 
@@ -147,7 +154,7 @@ class TestEventBus(unittest.IsolatedAsyncioTestCase):
 
         failed_events = await self.dlq.get_failed_events()
         self.assertEqual(len(failed_events), 1)
-        
+
         failed_envelope, reason, exc = failed_events[0]
         self.assertEqual(failed_envelope.event_type, "WorkerFailed")
         self.assertIn("Queue capacity overflow", reason)

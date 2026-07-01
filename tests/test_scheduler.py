@@ -6,6 +6,7 @@ Verifies chronological FIFO, priority heap sort, deadline EDF sorting,
 Weighted Fair Queue/DRR balance, priority aging starvation checks,
 and concurrent async producer-consumer loops.
 """
+
 import asyncio
 import unittest
 from typing import List
@@ -18,7 +19,7 @@ from inferx.scheduler.policies import (
     DeadlinePolicy,
     WeightedFairQueuePolicy,
     PriorityAgingPolicy,
-    AdaptivePolicy
+    AdaptivePolicy,
 )
 
 
@@ -30,7 +31,7 @@ class TestSchedulerPolicies(unittest.IsolatedAsyncioTestCase):
         request_id: str,
         tenant_id: str = "t1",
         priority: int = 0,
-        max_latency_ms: float = 30000.0
+        max_latency_ms: float = 30000.0,
     ) -> ScheduledRequest:
         """Helper to construct ScheduledRequest models."""
         return ScheduledRequest(
@@ -38,7 +39,7 @@ class TestSchedulerPolicies(unittest.IsolatedAsyncioTestCase):
             tenant_id=tenant_id,
             priority=priority,
             max_latency_ms=max_latency_ms,
-            payload=b"test_bytes"
+            payload=b"test_bytes",
         )
 
     async def test_fifo_policy(self) -> None:
@@ -63,7 +64,7 @@ class TestSchedulerPolicies(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(p1.request_id, "r1")
         self.assertEqual(p2.request_id, "r2")
         self.assertEqual(p3.request_id, "r3")
-        
+
         await scheduler.stop()
 
     async def test_priority_queue_policy(self) -> None:
@@ -127,7 +128,7 @@ class TestSchedulerPolicies(unittest.IsolatedAsyncioTestCase):
 
         # Dequeue 4 items and verify weights (should return A, A, A, B)
         results = [await scheduler.dequeue() for _ in range(4)]
-        
+
         a_count = sum(1 for r in results if r.tenant_id == "tenant-A")
         b_count = sum(1 for r in results if r.tenant_id == "tenant-B")
 
@@ -166,9 +167,7 @@ class TestSchedulerPolicies(unittest.IsolatedAsyncioTestCase):
     async def test_adaptive_policy_congestion(self) -> None:
         aging_policy = PriorityAgingPolicy(aging_rate_per_sec=1.0)
         adaptive_policy = AdaptivePolicy(
-            base_policy=aging_policy,
-            congestion_threshold=3,
-            boosted_aging_rate=10.0
+            base_policy=aging_policy, congestion_threshold=3, boosted_aging_rate=10.0
         )
         scheduler = Scheduler(adaptive_policy)
         await scheduler.start()
@@ -180,7 +179,7 @@ class TestSchedulerPolicies(unittest.IsolatedAsyncioTestCase):
         # Queue depth reaches threshold (size = 3) -> boosted aging rate
         await scheduler.enqueue(self.build_request("r2"))
         await scheduler.enqueue(self.build_request("r3"))
-        
+
         # Adaptive check is triggered on push/pop
         self.assertEqual(aging_policy.aging_rate, 10.0)
 
@@ -196,9 +195,9 @@ class TestSchedulerPolicies(unittest.IsolatedAsyncioTestCase):
     async def test_concurrency_conditions(self) -> None:
         scheduler = Scheduler(PriorityQueuePolicy())
         await scheduler.start()
-        
+
         consumed: List[str] = []
-        
+
         # Spawn multiple concurrent producer tasks
         async def producer(tid: int) -> None:
             for i in range(10):
@@ -214,11 +213,7 @@ class TestSchedulerPolicies(unittest.IsolatedAsyncioTestCase):
                 await asyncio.sleep(0.001)
 
         # Run 2 producers and 1 consumer concurrently (total 20 requests)
-        await asyncio.gather(
-            producer(1),
-            producer(2),
-            consumer()
-        )
+        await asyncio.gather(producer(1), producer(2), consumer())
 
         self.assertEqual(len(consumed), 20)
         await scheduler.stop()

@@ -5,11 +5,17 @@ InferX Batcher Test Suite.
 Verifies static size/timeout batching, Pydantic padding layouts, ShapeBucketeer bins,
 continuous iteration steps, and batch splits and merges.
 """
+
 import asyncio
 import unittest
 from typing import List
 
-from inferx.batcher.engine import StaticBatcher, ContinuousBatcher, AdaptiveBatcher, split_batch, merge_batches
+from inferx.batcher.engine import (
+    StaticBatcher,
+    ContinuousBatcher,
+    split_batch,
+    merge_batches,
+)
 from inferx.batcher.interfaces import Batch, IBatchHandler
 from inferx.batcher.padding import pad_tensors, ShapeBucketeer
 from inferx.scheduler.interfaces import ScheduledRequest
@@ -19,6 +25,7 @@ from inferx.scheduler.policies import FIFOPolicy
 
 class MockBatchHandler(IBatchHandler):
     """Mocks the execution target, storing received batches for inspection."""
+
     def __init__(self) -> None:
         self.batches: List[Batch] = []
 
@@ -29,21 +36,25 @@ class MockBatchHandler(IBatchHandler):
 class TestBatcher(unittest.IsolatedAsyncioTestCase):
     """Unit test suite for the Dynamic Batcher."""
 
-    def build_request(self, request_id: str, tokens: List[int], max_tokens: int = 10) -> ScheduledRequest:
+    def build_request(
+        self, request_id: str, tokens: List[int], max_tokens: int = 10
+    ) -> ScheduledRequest:
         return ScheduledRequest(
             request_id=request_id,
             tenant_id="t1",
             priority=1,
             payload=tokens if max_tokens == 10 else {"max_tokens": max_tokens},
-            max_latency_ms=30000.0
+            max_latency_ms=30000.0,
         )
 
     async def test_static_batching_by_size(self) -> None:
         scheduler = Scheduler(FIFOPolicy())
         await scheduler.start()
-        
+
         handler = MockBatchHandler()
-        batcher = StaticBatcher(scheduler, handler, max_batch_size=3, max_queue_delay_ms=5000)
+        batcher = StaticBatcher(
+            scheduler, handler, max_batch_size=3, max_queue_delay_ms=5000
+        )
         await batcher.start()
 
         # Enqueue 3 requests
@@ -58,17 +69,19 @@ class TestBatcher(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(handler.batches), 1)
         batch = handler.batches[0]
         self.assertEqual(len(batch.requests), 3)
-        
+
         await batcher.stop()
         await scheduler.stop()
 
     async def test_static_batching_by_timeout(self) -> None:
         scheduler = Scheduler(FIFOPolicy())
         await scheduler.start()
-        
+
         handler = MockBatchHandler()
         # Fast timeout of 50ms
-        batcher = StaticBatcher(scheduler, handler, max_batch_size=10, max_queue_delay_ms=50)
+        batcher = StaticBatcher(
+            scheduler, handler, max_batch_size=10, max_queue_delay_ms=50
+        )
         await batcher.start()
 
         # Enqueue only 2 requests (below max_batch_size=10)
@@ -101,10 +114,10 @@ class TestBatcher(unittest.IsolatedAsyncioTestCase):
 
     def test_shape_bucketing(self) -> None:
         bucketeer = ShapeBucketeer(thresholds=[2, 4])
-        
-        r_short = self.build_request("r_short", [1])       # len=1 <= 2
-        r_med = self.build_request("r_med", [1, 2, 3])     # len=3 <= 4
-        r_long = self.build_request("r_long", [1, 2, 3, 4, 5]) # len=5 > 4 (overflow)
+
+        r_short = self.build_request("r_short", [1])  # len=1 <= 2
+        r_med = self.build_request("r_med", [1, 2, 3])  # len=3 <= 4
+        r_long = self.build_request("r_long", [1, 2, 3, 4, 5])  # len=5 > 4 (overflow)
 
         bucketeer.add_request(r_short)
         bucketeer.add_request(r_med)
@@ -131,7 +144,7 @@ class TestBatcher(unittest.IsolatedAsyncioTestCase):
         await scheduler.enqueue(r2)
 
         continuous_batcher = ContinuousBatcher(scheduler, max_batch_size=2)
-        
+
         # Step 1: Ingests both requests, runs first generation step
         completed = await continuous_batcher.step()
         self.assertEqual(len(completed), 0)
@@ -166,7 +179,7 @@ class TestBatcher(unittest.IsolatedAsyncioTestCase):
             requests=[r1, r2, r3],
             padded_tensors=padded,
             padded_shape=shape,
-            max_tokens=30000
+            max_tokens=30000,
         )
 
         # Split batch into chunks of size 2
@@ -178,4 +191,6 @@ class TestBatcher(unittest.IsolatedAsyncioTestCase):
         # Merge them back
         merged = merge_batches(splits[0], splits[1])
         self.assertEqual(len(merged.requests), 3)
-        self.assertEqual(merged.padded_shape, [3, 3])  # Max length in merged is 3 ([1,2,3])
+        self.assertEqual(
+            merged.padded_shape, [3, 3]
+        )  # Max length in merged is 3 ([1,2,3])

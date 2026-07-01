@@ -1,6 +1,5 @@
 # tests/test_performance.py
 import unittest
-import asyncio
 from inferx.performance.benchmark import BenchmarkRunner
 from inferx.performance.chaos import ChaosController, FaultInjector
 from inferx.performance.load import LoadGenerator
@@ -24,12 +23,12 @@ class TestPerformance(unittest.IsolatedAsyncioTestCase):
         # Record latencies 1ms to 100ms
         for i in range(1, 101):
             self.runner.record_latency(float(i))
-            
+
         self.runner.record_resource_usage(cpu=25.0, memory_mb=512.0, gpu=80.0)
         self.runner.record_batch(batch_size=8, queue_delay_ms=2.5)
 
         metrics = self.runner.get_metrics()
-        
+
         self.assertEqual(metrics["count"], 100)
         self.assertEqual(metrics["p50"], 50.0)
         self.assertEqual(metrics["p90"], 90.0)
@@ -75,13 +74,17 @@ class TestPerformance(unittest.IsolatedAsyncioTestCase):
     async def test_load_generator_steady_and_burst(self) -> None:
         """Verifies steady and burst traffic generators populate target latencies lists."""
         load_gen = LoadGenerator()
-        
+
         # Test steady load
-        steady_latencies = await load_gen.generate_steady_load(rps=50.0, duration_sec=0.1)
+        steady_latencies = await load_gen.generate_steady_load(
+            rps=50.0, duration_sec=0.1
+        )
         self.assertTrue(len(steady_latencies) > 0)
-        
+
         # Test burst load
-        burst_latencies = await load_gen.generate_burst_load(concurrent_users=5, burst_size=2)
+        burst_latencies = await load_gen.generate_burst_load(
+            concurrent_users=5, burst_size=2
+        )
         self.assertEqual(len(burst_latencies), 10)
 
     def test_validation_engine_slas(self) -> None:
@@ -95,8 +98,12 @@ class TestPerformance(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.validator.validate_sla(fail_metrics, max_p95_ms=50.0))
 
         # Recovery validation (e.g. 80ms recovery -> Pass, 150ms -> Fail)
-        self.assertTrue(self.validator.validate_failover_recovery(0.0, 0.08, max_recovery_ms=100.0))
-        self.assertFalse(self.validator.validate_failover_recovery(0.0, 0.15, max_recovery_ms=100.0))
+        self.assertTrue(
+            self.validator.validate_failover_recovery(0.0, 0.08, max_recovery_ms=100.0)
+        )
+        self.assertFalse(
+            self.validator.validate_failover_recovery(0.0, 0.15, max_recovery_ms=100.0)
+        )
 
         # Correctness validation
         self.assertTrue(self.validator.validate_correctness("result", "result"))
@@ -105,10 +112,16 @@ class TestPerformance(unittest.IsolatedAsyncioTestCase):
     def test_report_generator_formats(self) -> None:
         """Verifies report formatter output layouts contain metric tables."""
         metrics = {
-            "count": 100, "throughput_rps": 500.0,
-            "p50": 10.0, "p95": 25.0, "p99": 45.0,
-            "cpu_avg": 30.0, "memory_avg_mb": 256.0, "gpu_avg": 75.0,
-            "batch_size_avg": 4.0, "queue_delay_avg_ms": 1.5
+            "count": 100,
+            "throughput_rps": 500.0,
+            "p50": 10.0,
+            "p95": 25.0,
+            "p99": 45.0,
+            "cpu_avg": 30.0,
+            "memory_avg_mb": 256.0,
+            "gpu_avg": 75.0,
+            "batch_size_avg": 4.0,
+            "queue_delay_avg_ms": 1.5,
         }
 
         markdown_report = ReportGenerator.generate_markdown_report(metrics)

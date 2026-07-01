@@ -5,12 +5,12 @@ InferX Model Runtime Test Suite.
 Verifies version resolution, LRU VRAM cache evictions, lazy loading, Warmup steps,
 hot reloading, and fallback redirects.
 """
-import asyncio
+
 import unittest
 
 from inferx.model.interfaces import ModelMetadata
 from inferx.model.registry import ModelRegistry
-from inferx.model.loader import ModelLoader, MockTokenizer
+from inferx.model.loader import ModelLoader
 from inferx.model.cache import ModelCache
 from inferx.model.manager import ModelRuntimeManager
 from inferx.model.metrics import ModelMetrics
@@ -22,16 +22,16 @@ class TestModelRuntime(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.registry = ModelRegistry()
         self.loader = ModelLoader()
-        
+
         # Configure cache with 10GB capacity
         self.cache = ModelCache(max_vram_bytes=10 * 1024 * 1024 * 1024)
         self.metrics = ModelMetrics()
-        
+
         self.manager = ModelRuntimeManager(
             registry=self.registry,
             loader=self.loader,
             cache=self.cache,
-            metrics=self.metrics
+            metrics=self.metrics,
         )
 
     def build_metadata(
@@ -40,7 +40,7 @@ class TestModelRuntime(unittest.IsolatedAsyncioTestCase):
         version: str,
         vram_gb: float = 2.0,
         fallback_name: str = None,
-        fallback_version: str = None
+        fallback_version: str = None,
     ) -> ModelMetadata:
         return ModelMetadata(
             model_name=name,
@@ -48,7 +48,7 @@ class TestModelRuntime(unittest.IsolatedAsyncioTestCase):
             backend_type="pytorch",
             estimated_vram_bytes=int(vram_gb * 1024 * 1024 * 1024),
             fallback_model_name=fallback_name,
-            fallback_version=fallback_version
+            fallback_version=fallback_version,
         )
 
     async def test_model_registry_resolution(self) -> None:
@@ -76,7 +76,7 @@ class TestModelRuntime(unittest.IsolatedAsyncioTestCase):
 
         # Lazy load on first predict call
         res = await self.manager.predict("llama", "v1.0", "Hello")
-        
+
         # 'Hello' encoded is [72, 101, 108, 108, 111]. Mock predict appends '_output'
         # [95, 111, 117, 116, 112, 117, 116]
         self.assertEqual(res, "Hello_output")
@@ -101,7 +101,7 @@ class TestModelRuntime(unittest.IsolatedAsyncioTestCase):
         # 2. Load model-3 (requires 4GB, total would be 12GB > 10GB capacity)
         # Should evict the oldest model (model-1)
         await self.manager.get_or_load_model("model-3", "v1.0")
-        
+
         self.assertEqual(self.cache.size(), 2)
         self.assertEqual(self.cache.current_vram_usage(), 8 * 1024 * 1024 * 1024)
         self.assertIsNone(self.cache.get(("model-1", "v1.0")))
@@ -113,16 +113,18 @@ class TestModelRuntime(unittest.IsolatedAsyncioTestCase):
         self.registry.register_model(m_old)
 
         # Load initial model
-        inst_old = await self.manager.get_or_load_model("llama", "v1.0")
+        await self.manager.get_or_load_model("llama", "v1.0")
         self.assertEqual(self.cache.size(), 1)
-        
+
         # Build new config (VRAM changes to 3GB)
         m_new = self.build_metadata("llama", "v1.0", vram_gb=3.0)
         await self.manager.hot_reload("llama", "v1.0", m_new)
 
         # Cache reference is updated atomically
         inst_new = await self.manager.get_or_load_model("llama", "v1.0")
-        self.assertEqual(inst_new.get_metadata().estimated_vram_bytes, 3 * 1024 * 1024 * 1024)
+        self.assertEqual(
+            inst_new.get_metadata().estimated_vram_bytes, 3 * 1024 * 1024 * 1024
+        )
         self.assertEqual(self.cache.current_vram_usage(), 3 * 1024 * 1024 * 1024)
 
     async def test_fallback_redirect_recovery(self) -> None:
@@ -132,7 +134,10 @@ class TestModelRuntime(unittest.IsolatedAsyncioTestCase):
 
         # Register primary model configuration routing to fallback
         m_primary = self.build_metadata(
-            "llama-primary", "v1.0", fallback_name="llama-fallback", fallback_version="v1.0"
+            "llama-primary",
+            "v1.0",
+            fallback_name="llama-fallback",
+            fallback_version="v1.0",
         )
         self.registry.register_model(m_primary)
 
@@ -149,7 +154,7 @@ class TestModelRuntime(unittest.IsolatedAsyncioTestCase):
         # Execute prediction. Should fail to load primary, fall back to llama-fallback,
         # and succeed using llama-fallback output signature!
         res = await self.manager.predict("llama-primary", "v1.0", "Hello")
-        
+
         self.assertEqual(res, "Hello_output")
         # Cache should only hold the fallback instance
         self.assertIsNotNone(self.cache.get(("llama-fallback", "v1.0")))

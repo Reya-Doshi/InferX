@@ -5,6 +5,7 @@ InferX Cluster State Manager.
 Coordinates metadata replication, model configuration registry syncs,
 and follower states synchronization.
 """
+
 import asyncio
 from typing import Any, Dict, List, Optional
 
@@ -18,10 +19,13 @@ class ClusterStateManager:
     """
     Manages and replicates global cluster configuration states.
     """
-    def __init__(self, node_id: str, rpc_client: Optional[ClusterRpcClient] = None) -> None:
+
+    def __init__(
+        self, node_id: str, rpc_client: Optional[ClusterRpcClient] = None
+    ) -> None:
         self.node_id = node_id
         self.rpc_client = rpc_client or ClusterRpcClient()
-        
+
         # Local cluster state metadata store
         self._state: Dict[str, Any] = {}
         self._lock = asyncio.Lock()
@@ -34,10 +38,12 @@ class ClusterStateManager:
         async with self._lock:
             self._state[key] = value
 
-    async def replicate_to_followers(self, peers: List[Dict[str, Any]], key: str, value: Any) -> None:
+    async def replicate_to_followers(
+        self, peers: List[Dict[str, Any]], key: str, value: Any
+    ) -> None:
         """
         Replicates a configuration key/value pair to all followers.
-        
+
         Executes RPC replication updates in parallel.
         """
         async with self._lock:
@@ -46,12 +52,16 @@ class ClusterStateManager:
         async def replicate_peer(peer: Dict[str, Any]) -> None:
             try:
                 await self.rpc_client.call(
-                    peer["host"], peer["port"],
+                    peer["host"],
+                    peer["port"],
                     "replicate_state",
-                    {"key": key, "value": value}
+                    {"key": key, "value": value},
                 )
             except Exception as e:
-                logger.warning(f"Replication failed to peer {peer['node_id']}: {e}", component="state_manager")
+                logger.warning(
+                    f"Replication failed to peer {peer['node_id']}: {e}",
+                    component="state_manager",
+                )
 
         tasks = [asyncio.create_task(replicate_peer(p)) for p in peers]
         if tasks:
@@ -61,10 +71,13 @@ class ClusterStateManager:
         """RPC Endpoint: Receives replicated configuration updates from the Leader."""
         key = params.get("key", "")
         value = params.get("value")
-        
+
         if key:
             async with self._lock:
                 self._state[key] = value
-                logger.info(f"Synchronized replicated state: {key} (Value: {value})", component="state_manager")
-                
+                logger.info(
+                    f"Synchronized replicated state: {key} (Value: {value})",
+                    component="state_manager",
+                )
+
         return {"success": True}

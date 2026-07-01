@@ -1,6 +1,6 @@
 # inferx/performance/interfaces.py
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 class IBenchmarkRunner(ABC):
@@ -74,12 +74,16 @@ class ILoadGenerator(ABC):
     """Interface for simulating streaming, burst, and steady concurrent request traffic."""
 
     @abstractmethod
-    async def generate_steady_load(self, rps: float, duration_sec: float) -> List[float]:
+    async def generate_steady_load(
+        self, rps: float, duration_sec: float
+    ) -> List[float]:
         """Generates steady rate requests, returning a list of request latencies."""
         pass
 
     @abstractmethod
-    async def generate_burst_load(self, concurrent_users: int, burst_size: int) -> List[float]:
+    async def generate_burst_load(
+        self, concurrent_users: int, burst_size: int
+    ) -> List[float]:
         """Simulates rapid user arrivals with large request pools."""
         pass
 
@@ -93,6 +97,8 @@ class IValidationEngine(ABC):
         pass
 
     @abstractmethod
-    def validate_failover_recovery(self, failover_start_time: float, recovery_time: float, max_recovery_ms: float) -> bool:
+    def validate_failover_recovery(
+        self, failover_start_time: float, recovery_time: float, max_recovery_ms: float
+    ) -> bool:
         """Verifies cluster leadership recovery is within failover limits."""
         pass

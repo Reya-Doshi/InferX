@@ -5,8 +5,9 @@ InferX Gateway Interfaces.
 Declares the RequestContext structures, protocol adapters, request routers,
 and middleware boundaries.
 """
+
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Coroutine, Tuple
+from typing import Any, Tuple
 from pydantic import BaseModel, Field
 
 
@@ -15,6 +16,7 @@ class GatewayRequestContext(BaseModel):
     Data model tracking a single request's context, tracing headers,
     and routing targets throughout the gateway pipeline.
     """
+
     request_id: str
     trace_id: str
     tenant_id: str

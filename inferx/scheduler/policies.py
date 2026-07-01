@@ -6,16 +6,18 @@ Implements concrete sorting and queue management strategies:
 FIFO, Priority Queue, Earliest Deadline First (EDF), Deficit Round Robin (DRR),
 Priority Aging, and Adaptive Schedulers.
 """
+
 from collections import deque
 import heapq
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from inferx.scheduler.interfaces import ISchedulingPolicy, ScheduledRequest
 
 
 class FIFOPolicy(ISchedulingPolicy):
     """Strict chronological First-In-First-Out queue (O(1) operations)."""
+
     def __init__(self) -> None:
         self._queue: deque[ScheduledRequest] = deque()
 
@@ -34,18 +36,24 @@ class FIFOPolicy(ISchedulingPolicy):
 class PriorityQueuePolicy(ISchedulingPolicy):
     """
     Heap-backed Priority Queue (O(log N) operations).
-    
+
     Orders tasks based on priority (highest values first) and resolves ties
     chronologically using enqueue timestamps.
     """
+
     def __init__(self) -> None:
         self._heap: List[Tuple[int, int, int, ScheduledRequest]] = []
-        self._counter = 0  # Prevents heap comparison falling through to ScheduledRequest
+        self._counter = (
+            0  # Prevents heap comparison falling through to ScheduledRequest
+        )
 
     def push(self, request: ScheduledRequest) -> None:
         # Pydantic validates non-negative priorities. We negate priority for max-heap behavior.
         priority_key = -request.priority
-        heapq.heappush(self._heap, (priority_key, request.enqueue_timestamp_ns, self._counter, request))
+        heapq.heappush(
+            self._heap,
+            (priority_key, request.enqueue_timestamp_ns, self._counter, request),
+        )
         self._counter += 1
 
     def pop(self) -> Optional[ScheduledRequest]:
@@ -61,15 +69,19 @@ class PriorityQueuePolicy(ISchedulingPolicy):
 class DeadlinePolicy(ISchedulingPolicy):
     """
     Earliest Deadline First (EDF) scheduler (O(log N) operations).
-    
+
     Prioritizes requests with the closest absolute deadline (enqueue time + latency limit).
     """
+
     def __init__(self) -> None:
         self._heap: List[Tuple[int, int, int, ScheduledRequest]] = []
         self._counter = 0
 
     def push(self, request: ScheduledRequest) -> None:
-        heapq.heappush(self._heap, (request.deadline_ns, request.enqueue_timestamp_ns, self._counter, request))
+        heapq.heappush(
+            self._heap,
+            (request.deadline_ns, request.enqueue_timestamp_ns, self._counter, request),
+        )
         self._counter += 1
 
     def pop(self) -> Optional[ScheduledRequest]:
@@ -85,18 +97,21 @@ class DeadlinePolicy(ISchedulingPolicy):
 class WeightedFairQueuePolicy(ISchedulingPolicy):
     """
     Deficit Round Robin (DRR) scheduling policy (O(1) amortized operations).
-    
+
     Allocates queue execution bandwidth fairly across tenants based on configured weights.
     """
-    def __init__(self, tenant_weights: Optional[Dict[str, int]] = None, default_weight: int = 1) -> None:
+
+    def __init__(
+        self, tenant_weights: Optional[Dict[str, int]] = None, default_weight: int = 1
+    ) -> None:
         self.tenant_weights = tenant_weights or {}
         self.default_weight = default_weight
-        
+
         # Deque for each active tenant
         self._queues: Dict[str, deque[ScheduledRequest]] = {}
         # Deficit counter for each active tenant
         self._deficits: Dict[str, int] = {}
-        
+
         # Active tenant list for round-robin rotation
         self._active_tenants: List[str] = []
         self._current_index = 0
@@ -139,7 +154,7 @@ class WeightedFairQueuePolicy(ISchedulingPolicy):
                 self._deficits[tenant_id] -= 1
                 self._total_size -= 1
                 request = queue.popleft()
-                
+
                 # Rotate index if deficit is exhausted or queue becomes empty
                 if self._deficits[tenant_id] == 0 or not queue:
                     self._deficits[tenant_id] = 0
@@ -157,9 +172,10 @@ class WeightedFairQueuePolicy(ISchedulingPolicy):
 class PriorityAgingPolicy(ISchedulingPolicy):
     """
     Priority Queue with dynamic starvation prevention (O(log N) pops, O(N) aging).
-    
+
     Increases the aged priority key of tasks as they sit in the queue.
     """
+
     def __init__(self, aging_rate_per_sec: float = 1.0) -> None:
         self.aging_rate = aging_rate_per_sec
         self._heap: List[Tuple[float, int, int, ScheduledRequest]] = []
@@ -168,7 +184,15 @@ class PriorityAgingPolicy(ISchedulingPolicy):
     def push(self, request: ScheduledRequest) -> None:
         # Initialize aged priority with base priority
         request.aged_priority = float(request.priority)
-        heapq.heappush(self._heap, (-request.aged_priority, request.enqueue_timestamp_ns, self._counter, request))
+        heapq.heappush(
+            self._heap,
+            (
+                -request.aged_priority,
+                request.enqueue_timestamp_ns,
+                self._counter,
+                request,
+            ),
+        )
         self._counter += 1
 
     def pop(self) -> Optional[ScheduledRequest]:
@@ -183,22 +207,22 @@ class PriorityAgingPolicy(ISchedulingPolicy):
     def age_requests(self) -> None:
         """
         Recalculates aged priorities and heapifies the backing list.
-        
+
         Should be executed periodically (off the hot path) to prevent starvation.
         """
         if not self._heap:
             return
-        
+
         now_ns = int(datetime.now(timezone.utc).timestamp() * 1e9)
         new_heap = []
-        
+
         for _, timestamp_ns, counter, request in self._heap:
             elapsed_sec = (now_ns - timestamp_ns) / 1e9
             # Increase priority over time
             request.aged_priority = request.priority + (self.aging_rate * elapsed_sec)
-            
+
             new_heap.append((-request.aged_priority, timestamp_ns, counter, request))
-            
+
         heapq.heapify(new_heap)
         self._heap = new_heap
 
@@ -206,16 +230,17 @@ class PriorityAgingPolicy(ISchedulingPolicy):
 class AdaptivePolicy(ISchedulingPolicy):
     """
     Dynamic scheduler that adjusts scheduling policies based on system load.
-    
+
     Under low load, acts as a strict priority queue. Under high load
     (queue length exceeds threshold), activates priority aging with increased rates
     to prevent starvation.
     """
+
     def __init__(
         self,
         base_policy: PriorityAgingPolicy,
         congestion_threshold: int = 100,
-        boosted_aging_rate: float = 5.0
+        boosted_aging_rate: float = 5.0,
     ) -> None:
         self.policy = base_policy
         self.congestion_threshold = congestion_threshold

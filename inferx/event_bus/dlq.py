@@ -5,6 +5,7 @@ InferX Event Bus Dead Letter Queue.
 Captures failed event dispatches, wrapping diagnostic exceptions alongside the original
 EventEnvelope for observability indexing.
 """
+
 from typing import List, Optional, Tuple
 import asyncio
 
@@ -18,10 +19,11 @@ logger = get_logger("event_bus.dlq")
 class DeadLetterQueue(IDeadLetterQueue):
     """
     Implements a Dead Letter Queue (DLQ) memory repository.
-    
+
     Logs dispatch errors structured with trace contexts and retains failed
     envelopes for administrator extraction.
     """
+
     def __init__(self, capacity: int = 1000) -> None:
         self.capacity = capacity
         self._dlq_buffer: List[Tuple[EventEnvelope, str, Optional[str]]] = []
@@ -31,11 +33,11 @@ class DeadLetterQueue(IDeadLetterQueue):
         self,
         envelope: EventEnvelope,
         reason: str,
-        exception: Optional[Exception] = None
+        exception: Optional[Exception] = None,
     ) -> None:
         """
         Appends failed events to the buffer and writes structured logs.
-        
+
         Extracts tracing context fields from the envelope to ensure the log records
         bind to the correct original request trace ID.
         """
@@ -43,19 +45,21 @@ class DeadLetterQueue(IDeadLetterQueue):
             # Enforce circular buffer bounds if capacity is exceeded
             if len(self._dlq_buffer) >= self.capacity:
                 self._dlq_buffer.pop(0)
-            
+
             exc_msg = str(exception) if exception else None
             self._dlq_buffer.append((envelope, reason, exc_msg))
 
         # Propagate tracing details from the original envelope to the logging contextvars
         ctx = telemetry_context.get().copy()
-        ctx.update({
-            "trace_id": envelope.trace_id,
-            "span_id": envelope.span_id,
-            "request_id": envelope.request_id,
-            "correlation_id": envelope.correlation_id,
-            "tenant_id": envelope.tenant_id
-        })
+        ctx.update(
+            {
+                "trace_id": envelope.trace_id,
+                "span_id": envelope.span_id,
+                "request_id": envelope.request_id,
+                "correlation_id": envelope.correlation_id,
+                "tenant_id": envelope.tenant_id,
+            }
+        )
         token = telemetry_context.set(ctx)
 
         try:
@@ -65,7 +69,7 @@ class DeadLetterQueue(IDeadLetterQueue):
                 event_type=envelope.event_type,
                 priority=envelope.priority,
                 exc_info=exception,
-                component="dlq"
+                component="dlq",
             )
         finally:
             telemetry_context.reset(token)

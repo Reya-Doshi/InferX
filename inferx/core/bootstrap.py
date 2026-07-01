@@ -4,6 +4,7 @@ InferX Dependency Injection & Bootstrap Coordinator.
 
 Implements a provider-based DI container and coordinates async component instantiation.
 """
+
 from abc import ABC, abstractmethod
 import os
 from typing import Any, Callable, Dict, Type, TypeVar
@@ -19,7 +20,7 @@ from inferx.interfaces.core import (
     IDIContainer,
     IHealthManager,
     IRuntimeLifecycle,
-    IRuntimeSupervisor
+    IRuntimeSupervisor,
 )
 from inferx.utils.logging import configure_logging, get_logger
 
@@ -42,7 +43,7 @@ logger = get_logger("bootstrap")
 
 class Provider(ABC):
     """Abstract Base Class representing a dependency provider."""
-    
+
     @abstractmethod
     def get(self) -> Any:
         """Retrieves or creates the target instance."""
@@ -51,7 +52,10 @@ class Provider(ABC):
 
 class SingletonProvider(Provider):
     """Provider that wraps a singleton instance, lazy loading it on the first resolve."""
-    def __init__(self, factory_fn: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+
+    def __init__(
+        self, factory_fn: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> None:
         self._factory_fn = factory_fn
         self._args = args
         self._kwargs = kwargs
@@ -65,7 +69,10 @@ class SingletonProvider(Provider):
 
 class FactoryProvider(Provider):
     """Provider that executes the factory function on every resolution request."""
-    def __init__(self, factory_fn: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+
+    def __init__(
+        self, factory_fn: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> None:
         self._factory_fn = factory_fn
         self._args = args
         self._kwargs = kwargs
@@ -77,9 +84,10 @@ class FactoryProvider(Provider):
 class DIContainer(IDIContainer):
     """
     Provider-based Dependency Injection Container.
-    
+
     Manages lazy singleton and factory bindings for clean architecture decoupling.
     """
+
     def __init__(self) -> None:
         self._providers: Dict[Type[Any], Provider] = {}
 
@@ -88,7 +96,7 @@ class DIContainer(IDIContainer):
         if not isinstance(provider, Provider):
             raise DependencyInjectionError(
                 message="DI registration requires a Provider instance.",
-                cause=f"Received: {type(provider).__name__}. Expected subclass of Provider."
+                cause=f"Received: {type(provider).__name__}. Expected subclass of Provider.",
             )
         self._providers[interface] = provider
 
@@ -98,14 +106,14 @@ class DIContainer(IDIContainer):
         if provider is None:
             raise DependencyInjectionError(
                 message=f"DI resolution failed for: {interface.__name__}",
-                cause="Target interface has no registered provider."
+                cause="Target interface has no registered provider.",
             )
-        
+
         instance = provider.get()
         if not isinstance(instance, interface):
             raise DependencyInjectionError(
                 message=f"DI type assertion failed for: {interface.__name__}",
-                cause=f"Resolved instance of type {type(instance).__name__} does not implement target interface."
+                cause=f"Resolved instance of type {type(instance).__name__} does not implement target interface.",
             )
         return instance
 
@@ -113,10 +121,10 @@ class DIContainer(IDIContainer):
 async def bootstrap_core(config_path: str) -> IDIContainer:
     """
     Asynchronously bootstraps the dependency container and instantiates core systems.
-    
+
     Args:
         config_path: Path to the YAML configuration file.
-        
+
     Returns:
         An initialized IDIContainer with active dependency providers.
     """
@@ -131,7 +139,9 @@ async def bootstrap_core(config_path: str) -> IDIContainer:
 
     # 2. Configure root structured logger
     configure_logging(config.log_level)
-    logger.info("Initializing runtime components (Async Bootstrap)...", component="bootstrap")
+    logger.info(
+        "Initializing runtime components (Async Bootstrap)...", component="bootstrap"
+    )
 
     # 3. Bind RuntimeContext singleton provider
     context = RuntimeContext()
@@ -143,8 +153,7 @@ async def bootstrap_core(config_path: str) -> IDIContainer:
 
     # 5. Bind RuntimeSupervisor singleton provider
     supervisor = RuntimeSupervisor(
-        gpus=config.worker.gpus,
-        heartbeat_timeout_ms=config.worker.heartbeat_timeout_ms
+        gpus=config.worker.gpus, heartbeat_timeout_ms=config.worker.heartbeat_timeout_ms
     )
     container.register(IRuntimeSupervisor, SingletonProvider(lambda: supervisor))
 
@@ -154,33 +163,35 @@ async def bootstrap_core(config_path: str) -> IDIContainer:
 
     # 7. Model runtime dependencies
     model_registry = ModelRegistry()
-    model_registry.register_model(ModelMetadata(
-        model_name="llama",
-        version="v1.0",
-        backend_type="pytorch",
-        estimated_vram_bytes=4 * 1024 * 1024 * 1024
-    ))
-    model_registry.register_model(ModelMetadata(
-        model_name="llama",
-        version="v2.0",
-        backend_type="pytorch",
-        estimated_vram_bytes=4 * 1024 * 1024 * 1024
-    ))
+    model_registry.register_model(
+        ModelMetadata(
+            model_name="llama",
+            version="v1.0",
+            backend_type="pytorch",
+            estimated_vram_bytes=4 * 1024 * 1024 * 1024,
+        )
+    )
+    model_registry.register_model(
+        ModelMetadata(
+            model_name="llama",
+            version="v2.0",
+            backend_type="pytorch",
+            estimated_vram_bytes=4 * 1024 * 1024 * 1024,
+        )
+    )
     model_registry.register_alias("llama", "latest", "v2.0")
 
     model_loader = ModelLoader()
     model_cache = ModelCache(max_vram_bytes=10 * 1024 * 1024 * 1024)
     model_runtime = ModelRuntimeManager(
-        registry=model_registry,
-        loader=model_loader,
-        cache=model_cache
+        registry=model_registry, loader=model_loader, cache=model_cache
     )
     container.register(ModelRuntimeManager, SingletonProvider(lambda: model_runtime))
 
     # 8. Admission Manager dependencies
     limiter = TokenBucketLimiter(
         global_capacity=float(config.admission.rate_limit_capacity),
-        global_refill_rate=float(config.admission.rate_limit_refill_rate)
+        global_refill_rate=float(config.admission.rate_limit_refill_rate),
     )
     backpressure = BackpressureController(
         max_vram_ratio=config.admission.vram_high_watermark
@@ -191,7 +202,7 @@ async def bootstrap_core(config_path: str) -> IDIContainer:
         context=context,
         limiter=limiter,
         shedder=shedder,
-        circuit_breaker=circuit_breaker
+        circuit_breaker=circuit_breaker,
     )
     container.register(AdmissionManager, SingletonProvider(lambda: admission_manager))
 
@@ -201,6 +212,7 @@ async def bootstrap_core(config_path: str) -> IDIContainer:
         allowed_keys.append(auth_token)
         try:
             import base64
+
             decoded = base64.b64decode(auth_token.encode("utf-8")).decode("utf-8")
             allowed_keys.append(decoded)
         except Exception:
@@ -209,32 +221,33 @@ async def bootstrap_core(config_path: str) -> IDIContainer:
     pipeline = MiddlewarePipeline(
         admission_manager=admission_manager,
         allowed_api_keys=allowed_keys,
-        max_request_size_bytes=1024 * 1024
+        max_request_size_bytes=1024 * 1024,
     )
     gateway_router = GatewayRouter()
-    
+
     from inferx.observability.manager import TelemetryManager
+
     telemetry_manager = TelemetryManager()
     container.register(TelemetryManager, SingletonProvider(lambda: telemetry_manager))
 
     ws_adapter = WebSocketAdapter(
         pipeline=pipeline,
         router=gateway_router,
-        run_prediction_fn=model_runtime.predict
+        run_prediction_fn=model_runtime.predict,
     )
     rest_adapter = RestAdapter(
         pipeline=pipeline,
         router=gateway_router,
         run_prediction_fn=model_runtime.predict,
         ws_adapter=ws_adapter,
-        telemetry_manager=telemetry_manager
+        telemetry_manager=telemetry_manager,
     )
-    
+
     gateway_manager = GatewayManager(
         host=config.gateway.host,
         port=config.gateway.port,
         rest_adapter=rest_adapter,
-        ws_adapter=ws_adapter
+        ws_adapter=ws_adapter,
     )
     container.register(GatewayManager, SingletonProvider(lambda: gateway_manager))
 
@@ -244,5 +257,8 @@ async def bootstrap_core(config_path: str) -> IDIContainer:
 
     health_manager.register_provider("worker_pool", check_workers, domain="workers")
 
-    logger.info("Async Bootstrap complete. Core dependency bindings resolved.", component="bootstrap")
+    logger.info(
+        "Async Bootstrap complete. Core dependency bindings resolved.",
+        component="bootstrap",
+    )
     return container

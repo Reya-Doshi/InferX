@@ -4,7 +4,8 @@ InferX Gateway Metrics.
 
 Tracks active connections, latency distributions, and request counts.
 """
-from typing import Any, Dict
+
+from typing import Any
 import threading
 
 
@@ -12,6 +13,7 @@ class GatewayMetrics:
     """
     Thread-safe metrics collector capturing gateway connection states and latencies.
     """
+
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._active_connections = 0
@@ -38,9 +40,13 @@ class GatewayMetrics:
     def get_snapshot(self) -> dict[str, Any]:
         """Returns a snapshot copy of current metrics values."""
         with self._lock:
-            avg_lat_ms = (self._total_latency_ns / self._requests_count / 1e6) if self._requests_count > 0 else 0.0
+            avg_lat_ms = (
+                (self._total_latency_ns / self._requests_count / 1e6)
+                if self._requests_count > 0
+                else 0.0
+            )
             return {
                 "active_connections": self._active_connections,
                 "requests_total": self._requests_count,
-                "average_request_latency_ms": avg_lat_ms
+                "average_request_latency_ms": avg_lat_ms,
             }

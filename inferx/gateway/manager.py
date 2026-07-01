@@ -5,10 +5,10 @@ InferX Gateway Manager.
 Coordinates the TCP server lifecycle, routes connections to adapters,
 manages active connection pools, and drives graceful shutdowns.
 """
-import asyncio
-from typing import Any, Dict, Optional, Set
 
-from inferx.gateway.interfaces import IProtocolAdapter
+import asyncio
+from typing import Optional, Set
+
 from inferx.gateway.protocols import RestAdapter, WebSocketAdapter
 from inferx.gateway.metrics import GatewayMetrics
 from inferx.utils.logging import get_logger
@@ -19,17 +19,18 @@ logger = get_logger("gateway.manager")
 class GatewayManager:
     """
     TCP Socket Server orchestrating Gateway operations.
-    
+
     Inspects HTTP headers on connection arrivals to route calls to either
     REST/SSE or WebSocket adapters.
     """
+
     def __init__(
         self,
         host: str = "127.0.0.1",
         port: int = 8080,
         rest_adapter: Optional[RestAdapter] = None,
         ws_adapter: Optional[WebSocketAdapter] = None,
-        metrics: Optional[GatewayMetrics] = None
+        metrics: Optional[GatewayMetrics] = None,
     ) -> None:
         self.host = host
         self.port = port
@@ -51,23 +52,24 @@ class GatewayManager:
 
             # Start server
             self._server = await asyncio.start_server(
-                self._handle_client,
-                self.host,
-                self.port
+                self._handle_client, self.host, self.port
             )
-            
+
             # Retrieve actual port if bound to 0
             sockets = self._server.sockets
             actual_port = sockets[0].getsockname()[1] if sockets else self.port
             self.port = actual_port
 
-            logger.info(f"Gateway Server active on http://{self.host}:{self.port}", component="gateway_manager")
+            logger.info(
+                f"Gateway Server active on http://{self.host}:{self.port}",
+                component="gateway_manager",
+            )
 
     async def stop(self) -> None:
         """Terminates TCP server socket listeners and drains active connections."""
         async with self._lock:
             self._is_active = False
-            
+
             if self._server:
                 self._server.close()
                 await self._server.wait_closed()
@@ -83,7 +85,9 @@ class GatewayManager:
             self._active_connections.clear()
             logger.info("Gateway Server stopped.", component="gateway_manager")
 
-    async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+    async def _handle_client(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ) -> None:
         """Unified connection entry point classifying and dispatching traffic."""
         self.metrics.record_connection_start()
         self._active_connections.add(writer)
@@ -135,7 +139,7 @@ class GatewayManager:
             # Yes, we can implement it! Let's check `WebSocketAdapter.handle_connection` in `protocols.py` which already parses headers.
             # If we delegate from `RestAdapter`, we can just pass the parsed headers so the websocket doesn't need to re-read them!
             # Let's implement this connection handler routing directly in `protocols.py` and `manager.py`.
-            
+
             # For simplicity, we can also let `GatewayManager._handle_client` delegate directly:
             # Since the client sends headers first, we can parse headers. If websocket upgrade, call `ws_adapter.handle_connection`
             # but wait, since we already read the headers, how do we pass them?
@@ -158,24 +162,28 @@ class GatewayManager:
             # So in `RestAdapter.handle_connection`, if we detect `upgrade: websocket` in headers, we can call:
             # `await self.ws_adapter.handle_with_headers(reader, writer, method, path, headers)`!
             # This is beautiful!
-            
+
             # Let's implement `RestAdapter` to delegate to `WebSocketAdapter`!
             # Let's modify `inferx/gateway/protocols.py` to add `ws_adapter` to `RestAdapter` and delegate.
             # Let's view the constructor and top of `RestAdapter` in `protocols.py` using `view_file` first.
-            
+
             # Wait, let's see how `protocols.py` is currently structured. We just wrote it, so we can edit it.
             # Let's view `protocols.py` lines 50 to 90.
-            
+
             # Wait, let's write `manager.py` first, then update `protocols.py` to route correctly.
             # In `manager.py`, `_handle_client` can just call `rest_adapter.handle_connection(reader, writer)`.
             # The `RestAdapter` will handle both REST and WebSockets by delegating if upgrade header is present!
             # This is incredibly elegant and simplifies `manager.py` to a single line!
-            
+
             # Let's write `manager.py` using this single-line delegation pattern.
             await self.rest_adapter.handle_connection(reader, writer)
 
         except Exception as e:
-            logger.error(f"Error handling connection: {e}", exc_info=True, component="gateway_manager")
+            logger.error(
+                f"Error handling connection: {e}",
+                exc_info=True,
+                component="gateway_manager",
+            )
         finally:
             self._active_connections.discard(writer)
             self.metrics.record_connection_end()

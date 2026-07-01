@@ -5,10 +5,11 @@ InferX Runtime Context Manager.
 Maintains thread-safe application state tracking, state transition validation rules,
 and telemetry statistics.
 """
+
 import asyncio
 from enum import Enum
 import threading
-from typing import Any, Callable, Coroutine, Optional
+from typing import Any, Callable, Coroutine
 
 from inferx.errors.taxonomy import StateTransitionError
 from inferx.utils.logging import get_logger, telemetry_context
@@ -30,9 +31,21 @@ class RuntimeState(Enum):
 # State transition rules matrix
 VALID_TRANSITIONS = {
     RuntimeState.INITIALIZING: {RuntimeState.READY, RuntimeState.FAILED},
-    RuntimeState.READY: {RuntimeState.RUNNING, RuntimeState.DRAINING, RuntimeState.FAILED},
-    RuntimeState.RUNNING: {RuntimeState.DEGRADED, RuntimeState.DRAINING, RuntimeState.FAILED},
-    RuntimeState.DEGRADED: {RuntimeState.RUNNING, RuntimeState.DRAINING, RuntimeState.FAILED},
+    RuntimeState.READY: {
+        RuntimeState.RUNNING,
+        RuntimeState.DRAINING,
+        RuntimeState.FAILED,
+    },
+    RuntimeState.RUNNING: {
+        RuntimeState.DEGRADED,
+        RuntimeState.DRAINING,
+        RuntimeState.FAILED,
+    },
+    RuntimeState.DEGRADED: {
+        RuntimeState.RUNNING,
+        RuntimeState.DRAINING,
+        RuntimeState.FAILED,
+    },
     RuntimeState.DRAINING: {RuntimeState.SHUTTING_DOWN, RuntimeState.FAILED},
     RuntimeState.SHUTTING_DOWN: {RuntimeState.STOPPED, RuntimeState.FAILED},
     RuntimeState.STOPPED: set(),
@@ -43,24 +56,27 @@ VALID_TRANSITIONS = {
 class RuntimeContext:
     """
     Central operational context for the InferX engine.
-    
+
     Validates state transitions and updates contextvars for structured logging.
     """
+
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._state_lock = asyncio.Lock()
         self._state = RuntimeState.INITIALIZING
-        
+
         # Telemetry metrics
         self._active_requests = 0
         self._total_requests_processed = 0
         self._current_vram_utilization = 0.0
         self._current_cpu_utilization = 0.0
         self._average_queue_latency_ms = 0.0
-        
+
         # State change callbacks
-        self._listeners: list[Callable[[RuntimeState, RuntimeState], Coroutine[Any, Any, None]]] = []
-        
+        self._listeners: list[
+            Callable[[RuntimeState, RuntimeState], Coroutine[Any, Any, None]]
+        ] = []
+
         # Seed initial state in telemetry logger context
         self._update_log_context(RuntimeState.INITIALIZING)
 
@@ -72,7 +88,7 @@ class RuntimeContext:
     async def transition_to(self, target_state: RuntimeState) -> None:
         """
         Asynchronously transition runtime state after asserting valid transitions.
-        
+
         Notifies all registered callback listeners of the transition.
         """
         async with self._state_lock:
@@ -82,7 +98,7 @@ class RuntimeContext:
             if target_state not in VALID_TRANSITIONS[current]:
                 raise StateTransitionError(
                     message=f"Illegal transition: {current.name} -> {target_state.name}",
-                    cause=f"State model does not permit transitions from {current.name} to {target_state.name}."
+                    cause=f"State model does not permit transitions from {current.name} to {target_state.name}.",
                 )
 
             with self._lock:
@@ -90,7 +106,10 @@ class RuntimeContext:
 
             # Synchronize telemetry context
             self._update_log_context(target_state)
-            logger.info(f"System transitioned state: {current.name} -> {target_state.name}", component="context")
+            logger.info(
+                f"System transitioned state: {current.name} -> {target_state.name}",
+                component="context",
+            )
 
             # Await all registered state transition callbacks
             for callback in self._listeners:
@@ -100,12 +119,12 @@ class RuntimeContext:
                     logger.error(
                         f"State listener callback failed: {e}",
                         exc_info=True,
-                        component="context"
+                        component="context",
                     )
 
     def register_state_listener(
         self,
-        callback: Callable[[RuntimeState, RuntimeState], Coroutine[Any, Any, None]]
+        callback: Callable[[RuntimeState, RuntimeState], Coroutine[Any, Any, None]],
     ) -> None:
         """Registers a coroutine callback to execute when state changes occur."""
         with self._lock:
@@ -129,10 +148,7 @@ class RuntimeContext:
                 self._total_requests_processed += 1
 
     def update_telemetry(
-        self,
-        vram_util: float,
-        cpu_util: float,
-        avg_queue_lat: float
+        self, vram_util: float, cpu_util: float, avg_queue_lat: float
     ) -> None:
         """Updates internal telemetry snapshot figures."""
         with self._lock:

@@ -5,6 +5,7 @@ InferX Distributed Runtime Interfaces.
 Defines cluster membership representations, leader election state machines,
 and RPC communication boundaries.
 """
+
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional
@@ -13,6 +14,7 @@ from pydantic import BaseModel, Field
 
 class NodeStatus(str, Enum):
     """Lifecycle states of cluster nodes."""
+
     JOINING = "JOINING"
     ACTIVE = "ACTIVE"
     DRAINING = "DRAINING"
@@ -23,6 +25,7 @@ class NodeInfo(BaseModel):
     """
     Metadata representation of a node's capabilities, load, and hosted models.
     """
+
     node_id: str
     host: str
     port: int
@@ -40,7 +43,9 @@ class IRpcClient(ABC):
     """Abstract interface defining cross-node RPC clients."""
 
     @abstractmethod
-    async def call(self, host: str, port: int, method: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def call(
+        self, host: str, port: int, method: str, params: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Dispatches an RPC request to a target remote node."""
         pass
 

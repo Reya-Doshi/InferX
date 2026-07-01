@@ -34,10 +34,18 @@ class BenchmarkRunner(IBenchmarkRunner):
         """Performs percentile computations and gathers resource averages."""
         if not self.latencies:
             return {
-                "count": 0, "throughput_rps": 0.0,
-                "p50": 0.0, "p90": 0.0, "p95": 0.0, "p99": 0.0, "p999": 0.0,
-                "cpu_avg": 0.0, "memory_avg_mb": 0.0, "gpu_avg": 0.0,
-                "batch_size_avg": 0.0, "queue_delay_avg_ms": 0.0
+                "count": 0,
+                "throughput_rps": 0.0,
+                "p50": 0.0,
+                "p90": 0.0,
+                "p95": 0.0,
+                "p99": 0.0,
+                "p999": 0.0,
+                "cpu_avg": 0.0,
+                "memory_avg_mb": 0.0,
+                "gpu_avg": 0.0,
+                "batch_size_avg": 0.0,
+                "queue_delay_avg_ms": 0.0,
             }
 
         sorted_latencies = sorted(self.latencies)
@@ -56,8 +64,14 @@ class BenchmarkRunner(IBenchmarkRunner):
         cpu_avg = sum(self.cpus) / len(self.cpus) if self.cpus else 0.0
         mem_avg = sum(self.memories) / len(self.memories) if self.memories else 0.0
         gpu_avg = sum(self.gpus) / len(self.gpus) if self.gpus else 0.0
-        batch_avg = sum(self.batch_sizes) / len(self.batch_sizes) if self.batch_sizes else 0.0
-        queue_avg = sum(self.queue_delays) / len(self.queue_delays) if self.queue_delays else 0.0
+        batch_avg = (
+            sum(self.batch_sizes) / len(self.batch_sizes) if self.batch_sizes else 0.0
+        )
+        queue_avg = (
+            sum(self.queue_delays) / len(self.queue_delays)
+            if self.queue_delays
+            else 0.0
+        )
 
         return {
             "count": n,
@@ -71,5 +85,5 @@ class BenchmarkRunner(IBenchmarkRunner):
             "memory_avg_mb": mem_avg,
             "gpu_avg": gpu_avg,
             "batch_size_avg": batch_avg,
-            "queue_delay_avg_ms": queue_avg
+            "queue_delay_avg_ms": queue_avg,
         }

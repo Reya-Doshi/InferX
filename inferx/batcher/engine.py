@@ -5,10 +5,10 @@ InferX Dynamic Batching Engine.
 Implements Static dynamic batching (timeout/size bounds), Continuous iteration-level
 scheduling (vLLM style), Adaptive batch sizing, and batch split/merge operations.
 """
+
 import asyncio
-from datetime import datetime, timezone
 import uuid
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from inferx.batcher.interfaces import Batch, IBatcher, IBatchHandler
 from inferx.batcher.metrics import BatcherMetrics
@@ -22,12 +22,12 @@ logger = get_logger("batcher")
 def split_batch(batch: Batch, chunk_size: int) -> List[Batch]:
     """
     Splits a large Batch into smaller Batch segments.
-    
+
     Pads and calculates new shapes for each segment.
     """
     if chunk_size <= 0:
         raise ValueError("Split chunk_size must be positive.")
-    
+
     if len(batch.requests) <= chunk_size:
         return [batch]
 
@@ -35,16 +35,18 @@ def split_batch(batch: Batch, chunk_size: int) -> List[Batch]:
     for i in range(0, len(batch.requests), chunk_size):
         chunk_requests = batch.requests[i : i + chunk_size]
         padded_tensors, padded_shape = pad_tensors(chunk_requests)
-        
+
         # Recalculate max tokens for this subset
-        max_tokens = max(req.max_latency_ms for req in chunk_requests) if chunk_requests else 0
+        max_tokens = (
+            max(req.max_latency_ms for req in chunk_requests) if chunk_requests else 0
+        )
 
         sub_batch = Batch(
             batch_id=str(uuid.uuid4()),
             requests=chunk_requests,
             padded_tensors=padded_tensors,
             padded_shape=padded_shape,
-            max_tokens=int(max_tokens)
+            max_tokens=int(max_tokens),
         )
         batches.append(sub_batch)
     return batches
@@ -53,7 +55,7 @@ def split_batch(batch: Batch, chunk_size: int) -> List[Batch]:
 def merge_batches(b1: Batch, b2: Batch) -> Batch:
     """
     Merges two Batch objects into a single larger Batch.
-    
+
     Performs tensor padding alignment across all merged inputs.
     """
     merged_requests = b1.requests + b2.requests
@@ -65,30 +67,31 @@ def merge_batches(b1: Batch, b2: Batch) -> Batch:
         requests=merged_requests,
         padded_tensors=padded_tensors,
         padded_shape=padded_shape,
-        max_tokens=max_tokens
+        max_tokens=max_tokens,
     )
 
 
 class StaticBatcher(IBatcher):
     """
     Aggregates requests into batches based on max size and timeout constraints.
-    
+
     Coordinates enqueuing tasks asynchronously from the IScheduler.
     """
+
     def __init__(
         self,
         scheduler: IScheduler,
         handler: IBatchHandler,
         max_batch_size: int,
         max_queue_delay_ms: int,
-        metrics: Optional[BatcherMetrics] = None
+        metrics: Optional[BatcherMetrics] = None,
     ) -> None:
         self.scheduler = scheduler
         self.handler = handler
         self.max_batch_size = max_batch_size
         self.max_queue_delay_sec = max_queue_delay_ms / 1000.0
         self.metrics = metrics or BatcherMetrics()
-        
+
         self._batch_task: Optional[asyncio.Task[None]] = None
         self._is_active = False
         self._lock = asyncio.Lock()
@@ -102,7 +105,7 @@ class StaticBatcher(IBatcher):
             self._batch_task = asyncio.create_task(self._batch_loop())
             logger.info(
                 f"Static batcher active (max_size: {self.max_batch_size}, timeout: {self.max_queue_delay_sec}s).",
-                component="batcher"
+                component="batcher",
             )
 
     async def stop(self) -> None:
@@ -116,7 +119,7 @@ class StaticBatcher(IBatcher):
                 except asyncio.CancelledError:
                     pass
                 self._batch_task = None
-            
+
             # Flush any remaining items in the scheduler queues
             await self._flush_remaining()
 
@@ -126,18 +129,18 @@ class StaticBatcher(IBatcher):
             try:
                 # 1. Block until the first request is available in the scheduler
                 first_req = await self.scheduler.dequeue()
-                
+
                 accumulated = [first_req]
                 start_time = asyncio.get_event_loop().time()
-                
+
                 # 2. Accumulate up to max_batch_size or until timeout expires
                 while len(accumulated) < self.max_batch_size:
                     elapsed = asyncio.get_event_loop().time() - start_time
                     remaining_time = self.max_queue_delay_sec - elapsed
-                    
+
                     if remaining_time <= 0:
                         break
-                    
+
                     # Check if scheduler has items (non-blocking size check)
                     if self.scheduler.size() > 0:
                         next_req = await self.scheduler.dequeue()
@@ -152,26 +155,32 @@ class StaticBatcher(IBatcher):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in batcher execution loop: {e}", exc_info=True, component="batcher")
+                logger.error(
+                    f"Error in batcher execution loop: {e}",
+                    exc_info=True,
+                    component="batcher",
+                )
 
     async def _dispatch_batch(self, requests: List[ScheduledRequest]) -> None:
         """Pads tensors, records metrics, and dispatches to handler."""
         if not requests:
             return
-        
+
         padded_tensors, padded_shape = pad_tensors(requests)
         max_tokens = max(req.max_latency_ms for req in requests)
-        
+
         batch = Batch(
             batch_id=str(uuid.uuid4()),
             requests=requests,
             padded_tensors=padded_tensors,
             padded_shape=padded_shape,
-            max_tokens=int(max_tokens)
+            max_tokens=int(max_tokens),
         )
 
         # Calculate metrics
-        actual_tokens = sum(len(req.payload) if isinstance(req.payload, list) else 1 for req in requests)
+        actual_tokens = sum(
+            len(req.payload) if isinstance(req.payload, list) else 1 for req in requests
+        )
         padded_tokens = padded_shape[0] * padded_shape[1]
         self.metrics.record_batch(len(requests), actual_tokens, padded_tokens)
 
@@ -188,18 +197,22 @@ class StaticBatcher(IBatcher):
                 accumulated.append(req)
             except Exception:
                 break
-        
+
         if accumulated:
-            logger.info(f"Flushing {len(accumulated)} remaining requests during teardown.", component="batcher")
+            logger.info(
+                f"Flushing {len(accumulated)} remaining requests during teardown.",
+                component="batcher",
+            )
             await self._dispatch_batch(accumulated)
 
 
 class ContinuousBatcher:
     """
     Simulates iteration-level continuous batching (vLLM style).
-    
+
     Evaluates token completion boundaries and manages slot injection dynamically.
     """
+
     def __init__(self, scheduler: IScheduler, max_batch_size: int) -> None:
         self.scheduler = scheduler
         self.max_batch_size = max_batch_size
@@ -210,14 +223,17 @@ class ContinuousBatcher:
     async def step(self) -> List[Tuple[ScheduledRequest, int]]:
         """
         Executes one token generation step.
-        
+
         Returns:
             A list of tuples: (CompletedRequest, total_tokens_generated).
         """
         completed = []
 
         # 1. Fill empty slots by pulling from the scheduler queue first
-        while len(self.active_requests) < self.max_batch_size and self.scheduler.size() > 0:
+        while (
+            len(self.active_requests) < self.max_batch_size
+            and self.scheduler.size() > 0
+        ):
             try:
                 new_req = await self.scheduler.dequeue()
                 self.active_requests.append(new_req)
@@ -230,7 +246,7 @@ class ContinuousBatcher:
         for req in self.active_requests:
             req_id = req.request_id
             self._generated_counts[req_id] = self._generated_counts.get(req_id, 0) + 1
-            
+
             # Determine generation target limit
             limit = 10
             if isinstance(req.payload, dict):
@@ -252,10 +268,11 @@ class ContinuousBatcher:
 class AdaptiveBatcher(StaticBatcher):
     """
     StaticBatcher subclass that adjusts max_batch_size based on scheduler queue depth.
-    
+
     Prioritizes low-latency (small batch sizes) under low load,
     and scales up to prioritize throughput (large batch sizes) under heavy load.
     """
+
     def __init__(
         self,
         scheduler: IScheduler,
@@ -264,9 +281,11 @@ class AdaptiveBatcher(StaticBatcher):
         max_batch_size: int = 32,
         congestion_threshold: int = 20,
         max_queue_delay_ms: int = 10,
-        metrics: Optional[BatcherMetrics] = None
+        metrics: Optional[BatcherMetrics] = None,
     ) -> None:
-        super().__init__(scheduler, handler, max_batch_size, max_queue_delay_ms, metrics)
+        super().__init__(
+            scheduler, handler, max_batch_size, max_queue_delay_ms, metrics
+        )
         self.min_batch_size = min_batch_size
         self.peak_batch_size = max_batch_size
         self.congestion_threshold = congestion_threshold
@@ -285,14 +304,14 @@ class AdaptiveBatcher(StaticBatcher):
                 first_req = await self.scheduler.dequeue()
                 accumulated = [first_req]
                 start_time = asyncio.get_event_loop().time()
-                
+
                 while len(accumulated) < self.max_batch_size:
                     elapsed = asyncio.get_event_loop().time() - start_time
                     remaining_time = self.max_queue_delay_sec - elapsed
-                    
+
                     if remaining_time <= 0:
                         break
-                    
+
                     if self.scheduler.size() > 0:
                         next_req = await self.scheduler.dequeue()
                         accumulated.append(next_req)
@@ -304,4 +323,8 @@ class AdaptiveBatcher(StaticBatcher):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in adaptive batcher: {e}", exc_info=True, component="batcher")
+                logger.error(
+                    f"Error in adaptive batcher: {e}",
+                    exc_info=True,
+                    component="batcher",
+                )

@@ -4,6 +4,7 @@ InferX Model Runtime Interfaces.
 
 Defines model metadata configurations, execution contracts, and tokenizer abstractions.
 """
+
 from abc import ABC, abstractmethod
 from typing import List, Optional
 from pydantic import BaseModel, Field
@@ -13,6 +14,7 @@ class ModelMetadata(BaseModel):
     """
     Data model representing model versioning, memory sizing, and fallbacks.
     """
+
     model_name: str
     version: str
     backend_type: str  # pytorch, onnx, tensorrt, vllm

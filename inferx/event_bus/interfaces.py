@@ -5,6 +5,7 @@ InferX Event Bus Interface Specifications.
 Declares the structural interfaces for publishing, subscribing, replaying,
 persisting, and handling dead letter event flows.
 """
+
 from abc import ABC, abstractmethod
 from typing import Any, Optional, TypeVar
 
@@ -23,11 +24,11 @@ class IEventBus(ABC):
     def subscribe(self, event_type: str, priority_queue: bool = False) -> str:
         """
         Creates a subscriber channel for an event type.
-        
+
         Args:
             event_type: String representation of the target event class name.
             priority_queue: If True, uses a PriorityQueue instead of a FIFO Queue.
-            
+
         Returns:
             A unique subscription ID.
         """
@@ -47,7 +48,7 @@ class IEventBus(ABC):
     async def replay(self, start_ns: int, sub_id: str) -> None:
         """
         Replays historical events from the persistent logs to the target subscription queue.
-        
+
         Args:
             start_ns: Starting epoch timestamp in nanoseconds.
             sub_id: Target subscription identifier.
@@ -74,14 +75,11 @@ class IDeadLetterQueue(ABC):
 
     @abstractmethod
     async def route_to_dlq(
-        self,
-        envelope: Any,
-        reason: str,
-        exception: Optional[Exception] = None
+        self, envelope: Any, reason: str, exception: Optional[Exception] = None
     ) -> None:
         """
         Routes a failed event envelope to the dead letter log, capturing trace contexts.
-        
+
         Args:
             envelope: The failed EventEnvelope.
             reason: Explanatory error diagnosis.

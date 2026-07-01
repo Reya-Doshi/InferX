@@ -5,6 +5,7 @@ InferX Scheduling Engine Interfaces.
 Defines structural models for scheduled tasks, policy behaviors,
 and core scheduling operations.
 """
+
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -14,16 +15,21 @@ from pydantic import BaseModel, Field
 class ScheduledRequest(BaseModel):
     """
     Data model representing a task placed in the scheduling queues.
-    
+
     Contains time margins, priority status, and payload details.
     """
+
     request_id: str
     tenant_id: str
     priority: int = Field(default=0, ge=0)  # Higher values represent higher priority
-    max_latency_ms: float = Field(default=30000.0, gt=0.0)  # Maximum allowed queue delay
-    enqueue_timestamp_ns: int = Field(default_factory=lambda: int(datetime.now(timezone.utc).timestamp() * 1e9))
+    max_latency_ms: float = Field(
+        default=30000.0, gt=0.0
+    )  # Maximum allowed queue delay
+    enqueue_timestamp_ns: int = Field(
+        default_factory=lambda: int(datetime.now(timezone.utc).timestamp() * 1e9)
+    )
     payload: Any
-    
+
     # Internal attribute tracked by dynamic priority/aging algorithms
     aged_priority: float = 0.0
 

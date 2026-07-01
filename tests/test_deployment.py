@@ -2,8 +2,6 @@
 import unittest
 import os
 import json
-import base64
-import asyncio
 from inferx.deployment.config import RuntimeConfigurationManager
 from inferx.deployment.controller import DeploymentController
 
@@ -13,13 +11,15 @@ class TestDeployment(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         self.config_file = "test_config_temp.json"
-        
+
         # Write temporary mock configuration file
         with open(self.config_file, "w") as f:
             json.dump({"concurrency_limit": 10, "gpu_memory_fraction": 0.8}, f)
 
         self.config_mgr = RuntimeConfigurationManager()
-        self.controller = DeploymentController(initial_replicas=3, initial_version="v1.0")
+        self.controller = DeploymentController(
+            initial_replicas=3, initial_version="v1.0"
+        )
 
     async def asyncTearDown(self) -> None:
         if os.path.exists(self.config_file):
@@ -31,6 +31,7 @@ class TestDeployment(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.config_mgr.get("concurrency_limit"), 10)
 
         triggered_vals = []
+
         def on_concurrency_change(new_val: int) -> None:
             triggered_vals.append(new_val)
 
@@ -49,7 +50,9 @@ class TestDeployment(unittest.IsolatedAsyncioTestCase):
     def test_secret_rotation(self) -> None:
         """Verifies base64 encoded secrets decryption and rotation updates."""
         secret_calls = []
-        self.config_mgr.register_callback("auth_token", lambda val: secret_calls.append(val))
+        self.config_mgr.register_callback(
+            "auth_token", lambda val: secret_calls.append(val)
+        )
 
         # Rotate secret
         # Base64 for "new-secret-token" is "bmV3LXNlY3JldC10b2tlbg=="
@@ -72,7 +75,7 @@ class TestDeployment(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(updated_status["version"], "v1.1")
         self.assertEqual(updated_status["state"], "STABLE")
         self.assertEqual(updated_status["replicas"], 3)
-        
+
         for inst in updated_status["instances"]:
             self.assertEqual(inst["version"], "v1.1")
             self.assertEqual(inst["status"], "Ready")
@@ -83,20 +86,24 @@ class TestDeployment(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(status["replicas"], 3)
 
         # Launch Canary (10% traffic routing)
-        success = await self.controller.start_canary_deployment("v2.0", canary_weight_percent=10)
+        success = await self.controller.start_canary_deployment(
+            "v2.0", canary_weight_percent=10
+        )
         self.assertTrue(success)
 
         canary_status = self.controller.get_status()
         self.assertEqual(canary_status["state"], "CANARY")
-        self.assertEqual(canary_status["replicas"], 4) # 3 stable + 1 canary pod
+        self.assertEqual(canary_status["replicas"], 4)  # 3 stable + 1 canary pod
 
         # Simulating telemetry error spike -> Trigger rollback
         await self.controller.execute_canary_rollback("v2.0")
 
         post_rollback_status = self.controller.get_status()
         self.assertEqual(post_rollback_status["state"], "STABLE")
-        self.assertEqual(post_rollback_status["replicas"], 3) # Back to 3 stable instances
-        
+        self.assertEqual(
+            post_rollback_status["replicas"], 3
+        )  # Back to 3 stable instances
+
         for inst in post_rollback_status["instances"]:
             self.assertEqual(inst["version"], "v1.0")
 
@@ -108,7 +115,7 @@ class TestDeployment(unittest.IsolatedAsyncioTestCase):
         # Simulating autoscaling check rules:
         # If queue depth > 50, scale up to 6 replicas
         simulated_queue_depth = 75
-        
+
         if simulated_queue_depth > 50:
             await self.controller.scale_replicas(6)
 

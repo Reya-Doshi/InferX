@@ -1,8 +1,6 @@
 # tests/benchmark_performance.py
 import asyncio
-import time
 import random
-import os
 from inferx.performance.benchmark import BenchmarkRunner
 from inferx.performance.load import LoadGenerator
 from inferx.performance.profiler import RuntimeProfiler
@@ -32,11 +30,11 @@ async def run_performance_engineering_validation() -> None:
         runner.record_resource_usage(
             cpu=random.uniform(30.0, 45.0),
             memory_mb=random.uniform(512.0, 580.0),
-            gpu=random.uniform(75.0, 85.0)
+            gpu=random.uniform(75.0, 85.0),
         )
         runner.record_batch(
             batch_size=random.choice([4, 8, 16]),
-            queue_delay_ms=random.uniform(1.0, 3.5)
+            queue_delay_ms=random.uniform(1.0, 3.5),
         )
 
     # Initialize load generator and dispatch 250 requests/sec load
@@ -56,12 +54,10 @@ async def run_performance_engineering_validation() -> None:
     print("\nEvaluating SLA verification criteria:")
     sla_passed = validator.validate_sla(metrics, max_p95_ms=50.0)
     throughput_passed = validator.validate_throughput(metrics, min_rps=100.0)
-    
+
     # Simulate cluster failover recovery timing (e.g. 75ms recovery)
     failover_passed = validator.validate_failover_recovery(
-        failover_start_time=0.0,
-        recovery_time=0.075,
-        max_recovery_ms=100.0
+        failover_start_time=0.0, recovery_time=0.075, max_recovery_ms=100.0
     )
 
     # Compile and write reports
@@ -78,17 +74,27 @@ async def run_performance_engineering_validation() -> None:
         f.write(json_report)
 
     print("\nBenchmark reports successfully compiled and written:")
-    print("  - [Markdown Report](file:///c:/Users/lenovo/OneDrive/Desktop/ReyaWeb/InferX/performance_report.md)")
-    print("  - [HTML Dashboard](file:///c:/Users/lenovo/OneDrive/Desktop/ReyaWeb/InferX/performance_report.html)")
-    print("  - [JSON Report](file:///c:/Users/lenovo/OneDrive/Desktop/ReyaWeb/InferX/performance_report.json)")
+    print(
+        "  - [Markdown Report](file:///c:/Users/lenovo/OneDrive/Desktop/ReyaWeb/InferX/performance_report.md)"
+    )
+    print(
+        "  - [HTML Dashboard](file:///c:/Users/lenovo/OneDrive/Desktop/ReyaWeb/InferX/performance_report.html)"
+    )
+    print(
+        "  - [JSON Report](file:///c:/Users/lenovo/OneDrive/Desktop/ReyaWeb/InferX/performance_report.json)"
+    )
     print("-" * 70)
     print(f"Total Client Requests Run : {metrics['count']}")
     print(f"Steady State Throughput   : {metrics['throughput_rps']:.2f} req/sec")
     print(f"P50 Latency (Median)      : {metrics['p50']:.2f} ms")
     print(f"P95 Latency               : {metrics['p95']:.2f} ms")
     print(f"P99 Latency               : {metrics['p99']:.2f} ms")
-    print(f"Peak Memory Allocated     : {metrics['peak_memory_bytes'] / (1024 * 1024):.2f} MB")
-    print(f"SLA Validation Status     : {'SUCCESS' if (sla_passed and throughput_passed and failover_passed) else 'FAILED'}")
+    print(
+        f"Peak Memory Allocated     : {metrics['peak_memory_bytes'] / (1024 * 1024):.2f} MB"
+    )
+    print(
+        f"SLA Validation Status     : {'SUCCESS' if (sla_passed and throughput_passed and failover_passed) else 'FAILED'}"
+    )
     print("=" * 70)
 
 

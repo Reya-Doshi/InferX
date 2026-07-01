@@ -5,6 +5,7 @@ InferX Distributed Tracing.
 Provides async-safe nested Spans context management, parent trace propagation
 via ContextVars, and background buffered trace exporters.
 """
+
 import asyncio
 from contextvars import ContextVar
 import time
@@ -17,33 +18,33 @@ from inferx.utils.logging import get_logger
 logger = get_logger("observability.tracing")
 
 # Task-local ContextVar tracking active parent span context
-parent_span_var: ContextVar[Optional[SpanData]] = ContextVar("parent_span", default=None)
+parent_span_var: ContextVar[Optional[SpanData]] = ContextVar(
+    "parent_span", default=None
+)
 
 
 class Span:
     """
     Async context manager measuring and tracking execution spans.
     """
+
     def __init__(
-        self,
-        tracer: "Tracer",
-        name: str,
-        attributes: Optional[Dict[str, Any]] = None
+        self, tracer: "Tracer", name: str, attributes: Optional[Dict[str, Any]] = None
     ) -> None:
         self.tracer = tracer
         self.name = name
         self.attributes = attributes or {}
-        
+
         self.span_id = str(uuid.uuid4())[:16]
         self.trace_id = ""
         self.parent_span_id: Optional[str] = None
         self.start_time_ns = 0
-        
+
         self._token: Any = None
 
     async def __aenter__(self) -> "Span":
         self.start_time_ns = time.perf_counter_ns()
-        
+
         # 1. Context propagation check: resolve parent span
         parent = parent_span_var.get()
         if parent:
@@ -60,7 +61,7 @@ class Span:
             name=self.name,
             start_time_ns=self.start_time_ns,
             end_time_ns=0,
-            attributes=self.attributes
+            attributes=self.attributes,
         )
 
         # 3. Bind active context
@@ -69,7 +70,7 @@ class Span:
 
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         end_time_ns = time.perf_counter_ns()
-        
+
         # Log exception telemetry if block failed
         if exc_type is not None:
             self.attributes["error"] = True
@@ -84,7 +85,7 @@ class Span:
             name=self.name,
             start_time_ns=self.start_time_ns,
             end_time_ns=end_time_ns,
-            attributes=self.attributes
+            attributes=self.attributes,
         )
 
         # 4. Push to exporter buffer
@@ -99,14 +100,15 @@ class BufferedSpanExporter:
     Buffered trace exporter batching completed spans in a background task
     to guarantee <1% performance overhead.
     """
+
     def __init__(self, flush_interval_sec: float = 1.0, batch_size: int = 100) -> None:
         self.flush_interval = flush_interval_sec
         self.batch_size = batch_size
-        
+
         self._queue: List[SpanData] = []
         self._exported_spans: List[SpanData] = []  # In-memory storage for testing/logs
         self._lock = threading_lock()
-        
+
         self._loop_task: Optional[asyncio.Task[None]] = None
         self._is_active = False
 
@@ -129,7 +131,7 @@ class BufferedSpanExporter:
             except asyncio.CancelledError:
                 pass
             self._loop_task = None
-        
+
         # Final flush
         self._flush()
 
@@ -159,7 +161,7 @@ class BufferedSpanExporter:
         with self._lock:
             if not self._queue:
                 return
-            
+
             # Simulated telemetry export payload write
             self._exported_spans.extend(self._queue)
             self._queue.clear()
@@ -173,13 +175,18 @@ class BufferedSpanExporter:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Error in trace exporter loop: {e}", exc_info=True, component="span_exporter")
+                logger.error(
+                    f"Error in trace exporter loop: {e}",
+                    exc_info=True,
+                    component="span_exporter",
+                )
 
 
 class Tracer(ITracer):
     """
     Tracing coordinator orchestrating trace span lifetimes.
     """
+
     def __init__(self, exporter: Optional[BufferedSpanExporter] = None) -> None:
         self.exporter = exporter or BufferedSpanExporter()
         try:
@@ -196,4 +203,5 @@ class Tracer(ITracer):
 # Helper function to obtain lock primitives dynamically
 def threading_lock() -> Any:
     import threading
+
     return threading.RLock()

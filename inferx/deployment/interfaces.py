@@ -1,6 +1,6 @@
 # inferx/deployment/interfaces.py
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict
 
 
 class IConfigManager(ABC):
@@ -37,10 +37,7 @@ class IDeploymentController(ABC):
 
     @abstractmethod
     async def start_rolling_update(
-        self,
-        target_version: str,
-        max_surge: int = 1,
-        max_unavailable: int = 0
+        self, target_version: str, max_surge: int = 1, max_unavailable: int = 0
     ) -> bool:
         """Simulates an incremental rolling update replacement rollout, verifying health check status."""
         pass
@@ -50,7 +47,7 @@ class IDeploymentController(ABC):
         self,
         target_version: str,
         canary_weight_percent: int = 10,
-        rollback_error_threshold: float = 0.05
+        rollback_error_threshold: float = 0.05,
     ) -> bool:
         """Launches a Canary rollout, routing fractional traffic and evaluating errors for rollback."""
         pass

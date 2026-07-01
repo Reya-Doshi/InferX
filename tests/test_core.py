@@ -5,41 +5,42 @@ InferX Runtime Core Test Suite.
 Contains async unit and integration tests verifying Pydantic configs, DI providers,
 state machine transitions, ContextVars telemetry logging, and health reports.
 """
-import asyncio
+
 import io
 import logging
 import os
 import tempfile
 import unittest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 from typing import Any
 
-from inferx.core.bootstrap import bootstrap_core, DIContainer, SingletonProvider, FactoryProvider
-from inferx.core.config import RuntimeConfig, AsyncYAMLConfigLoader
+from inferx.core.bootstrap import (
+    DIContainer,
+    SingletonProvider,
+    FactoryProvider,
+)
+from inferx.core.config import AsyncYAMLConfigLoader
 from inferx.core.context import RuntimeContext, RuntimeState
 from inferx.core.health import HealthManager, HealthReport
 from inferx.core.lifecycle import RuntimeLifecycle
-from inferx.core.supervisor import RuntimeSupervisor
 from inferx.errors.taxonomy import (
     ConfigurationError,
-    DependencyInjectionError,
-    StateTransitionError
+    StateTransitionError,
 )
 from inferx.interfaces.core import (
-    IConfigLoader,
-    IHealthManager,
-    IRuntimeLifecycle,
-    IRuntimeSupervisor
+    IRuntimeSupervisor,
 )
-from inferx.utils.logging import JSONFormatter, telemetry_context, get_logger
+from inferx.utils.logging import JSONFormatter, telemetry_context
 
 
 class TestConfigValidation(unittest.IsolatedAsyncioTestCase):
     """Verifies async Pydantic configuration validations."""
 
     def setUp(self) -> None:
-        self.temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".yaml", mode="w")
-        
+        self.temp_file = tempfile.NamedTemporaryFile(
+            delete=False, suffix=".yaml", mode="w"
+        )
+
     def tearDown(self) -> None:
         os.unlink(self.temp_file.name)
 
@@ -96,7 +97,7 @@ class TestDIContainer(unittest.TestCase):
 
         # Singleton provider should return the same instance
         self.container.register(TestInterface, SingletonProvider(TestImplementation))
-        
+
         inst1 = self.container.resolve(TestInterface)
         inst2 = self.container.resolve(TestInterface)
         self.assertIs(inst1, inst2)
@@ -110,7 +111,7 @@ class TestDIContainer(unittest.TestCase):
 
         # Factory provider should return a fresh instance every time
         self.container.register(TestInterface, FactoryProvider(TestImplementation))
-        
+
         inst1 = self.container.resolve(TestInterface)
         inst2 = self.container.resolve(TestInterface)
         self.assertIsNot(inst1, inst2)
@@ -156,7 +157,7 @@ class TestTelemetryLogging(unittest.TestCase):
         # Setup log capture stream
         log_capture = io.StringIO()
         formatter = JSONFormatter()
-        
+
         logger = logging.getLogger("inferx.test_telemetry")
         handler = logging.StreamHandler(log_capture)
         handler.setFormatter(formatter)
@@ -164,11 +165,13 @@ class TestTelemetryLogging(unittest.TestCase):
         logger.setLevel(logging.INFO)
 
         # Set task context variables
-        token = telemetry_context.set({
-            "request_id": "test-req-999",
-            "model_name": "llama-3-8b",
-            "tenant_id": "enterprise-omega"
-        })
+        token = telemetry_context.set(
+            {
+                "request_id": "test-req-999",
+                "model_name": "llama-3-8b",
+                "tenant_id": "enterprise-omega",
+            }
+        )
 
         try:
             logger.info("Verifying telemetry keys in structured log output.")
@@ -189,7 +192,7 @@ class TestHealthManager(unittest.IsolatedAsyncioTestCase):
 
     async def test_complete_health_report(self) -> None:
         manager = HealthManager(vram_watermark=0.90)
-        
+
         async def check_ok() -> bool:
             return True
 
@@ -199,7 +202,7 @@ class TestHealthManager(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(report, HealthReport)
         self.assertEqual(report.status, "READY")
         self.assertEqual(report.workers["mock_worker"], "HEALTHY")
-        
+
         # Verify placeholders exist
         self.assertIn("scheduler_loop", report.scheduler)
         self.assertIn("batcher_aggregator", report.batcher)
@@ -216,10 +219,10 @@ class TestRuntimeLifecycle(unittest.IsolatedAsyncioTestCase):
         # Transition context to RUNNING state manually for testing
         await context.transition_to(RuntimeState.READY)
         await context.transition_to(RuntimeState.RUNNING)
-        
+
         # Trigger graceful shutdown
         await lifecycle.shutdown(signal_num=15)
-        
+
         self.assertEqual(context.state, RuntimeState.STOPPED)
         supervisor.stop.assert_awaited_once()
 
@@ -227,6 +230,7 @@ class TestRuntimeLifecycle(unittest.IsolatedAsyncioTestCase):
 def import_json(json_str: str) -> dict[str, Any]:
     """Helper to parse captured log structures."""
     import json
+
     return json.loads(json_str)
 
 

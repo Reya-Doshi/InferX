@@ -5,6 +5,7 @@ InferX Admission Manager.
 Coordinates rate limiters, load shedders, and circuit breakers in a non-blocking
 gatekeeper pipeline, registering metrics and return verdicts.
 """
+
 import time
 from typing import Optional
 
@@ -19,10 +20,11 @@ from inferx.scheduler.interfaces import IScheduler, ScheduledRequest
 class AdmissionManager(IAdmissionController):
     """
     Primary gatekeeper protecting the runtime from overload states.
-    
+
     Sequentially checks circuit breaker status, tenant rate limits,
     and priority-aware hardware load limits.
     """
+
     def __init__(
         self,
         context: RuntimeContext,
@@ -30,7 +32,7 @@ class AdmissionManager(IAdmissionController):
         shedder: LoadShedder,
         circuit_breaker: CircuitBreaker,
         metrics: Optional[AdmissionMetrics] = None,
-        scheduler: Optional[IScheduler] = None
+        scheduler: Optional[IScheduler] = None,
     ) -> None:
         self.context = context
         self.limiter = limiter
@@ -42,7 +44,7 @@ class AdmissionManager(IAdmissionController):
     async def admit(self, request: ScheduledRequest) -> AdmissionVerdict:
         """
         Evaluates the request.
-        
+
         Decision steps:
             1. Check Circuit Breaker (Trips fail fast with 503).
             2. Check Token Bucket limits (Global/Tenant breaches fail with 429).
@@ -64,7 +66,7 @@ class AdmissionManager(IAdmissionController):
                     admitted=False,
                     error_code=error_code,
                     status_code=status_code,
-                    retry_after_sec=retry_after
+                    retry_after_sec=retry_after,
                 )
 
             # 2. Rate Limiting Check
@@ -77,14 +79,14 @@ class AdmissionManager(IAdmissionController):
                     admitted=False,
                     error_code=error_code,
                     status_code=status_code,
-                    retry_after_sec=retry_after
+                    retry_after_sec=retry_after,
                 )
 
             # 3. Load Shedding Check
             if self.shedder.should_shed(request.priority, self.context):
                 status_code = 503
                 error_code = "LOAD_SHEDDING"
-                
+
                 # Estimate retry backoff based on queue occupancy
                 qsize = self.scheduler.size() if self.scheduler else 0
                 retry_after = max(0.1, qsize * 0.01)  # 10ms per enqueued request
@@ -92,7 +94,7 @@ class AdmissionManager(IAdmissionController):
                     admitted=False,
                     error_code=error_code,
                     status_code=status_code,
-                    retry_after_sec=retry_after
+                    retry_after_sec=retry_after,
                 )
 
             # 4. Admission Approved
@@ -105,5 +107,5 @@ class AdmissionManager(IAdmissionController):
                 admitted=admitted,
                 status_code=status_code,
                 latency_ns=elapsed_ns,
-                retry_after=retry_after
+                retry_after=retry_after,
             )

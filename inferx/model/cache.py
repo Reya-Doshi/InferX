@@ -5,8 +5,9 @@ InferX Model Cache.
 Implements an LRU model instance cache that monitors GPU VRAM usage
 and triggers size-based evictions.
 """
+
 from collections import OrderedDict
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from inferx.model.interfaces import IModelInstance
 from inferx.utils.logging import get_logger
@@ -17,9 +18,10 @@ logger = get_logger("model.cache")
 class ModelCache:
     """
     LRU Cache managing active model instances in VRAM.
-    
+
     Evicts least recently used models when VRAM limits are exceeded.
     """
+
     def __init__(self, max_vram_bytes: int = 16 * 1024 * 1024 * 1024) -> None:
         self.max_vram_bytes = max_vram_bytes
         self._cache: OrderedDict[Tuple[str, str], IModelInstance] = OrderedDict()
@@ -29,22 +31,24 @@ class ModelCache:
         """Retrieves a model instance and updates its LRU position."""
         if key not in self._cache:
             return None
-        
+
         # Move to end (most recently used)
         instance = self._cache.pop(key)
         self._cache[key] = instance
         return instance
 
-    def put(self, key: Tuple[str, str], instance: IModelInstance) -> List[IModelInstance]:
+    def put(
+        self, key: Tuple[str, str], instance: IModelInstance
+    ) -> List[IModelInstance]:
         """
         Inserts a model instance, evicting older models if VRAM limits are crossed.
-        
+
         Returns:
             A list of evicted model instances.
         """
         metadata = instance.get_metadata()
         instance_vram = metadata.estimated_vram_bytes
-        
+
         if instance_vram > self.max_vram_bytes:
             raise MemoryError(
                 f"Model {metadata.model_name}:{metadata.version} footprint ({instance_vram} bytes) "
@@ -63,7 +67,7 @@ class ModelCache:
             logger.warning(
                 f"VRAM congestion. Evicting model {old_metadata.model_name}:{old_metadata.version} "
                 f"({old_metadata.estimated_vram_bytes} bytes) from memory cache.",
-                component="model_cache"
+                component="model_cache",
             )
 
         self._cache[key] = instance

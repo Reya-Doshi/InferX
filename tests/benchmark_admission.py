@@ -5,6 +5,7 @@ InferX Admission Controller Performance Benchmark.
 Measures the admission manager decision latency under heavy traffic.
 Verifies compliance with the <100 microsecond performance target.
 """
+
 import asyncio
 import time
 from typing import List
@@ -28,7 +29,9 @@ async def run_admission_benchmark(count: int = 100000) -> None:
         context.increment_active_requests()
 
     # Set large capacities to prevent rate limits from skewing latency paths
-    limiter = TokenBucketLimiter(global_capacity=float(count + 100), global_refill_rate=float(count))
+    limiter = TokenBucketLimiter(
+        global_capacity=float(count + 100), global_refill_rate=float(count)
+    )
     backpressure = BackpressureController()
     shedder = LoadShedder(backpressure)
     circuit_breaker = CircuitBreaker()
@@ -37,7 +40,7 @@ async def run_admission_benchmark(count: int = 100000) -> None:
         context=context,
         limiter=limiter,
         shedder=shedder,
-        circuit_breaker=circuit_breaker
+        circuit_breaker=circuit_breaker,
     )
 
     # Pre-generate requests
@@ -46,19 +49,19 @@ async def run_admission_benchmark(count: int = 100000) -> None:
             request_id=f"r-{i}",
             tenant_id="tenant-global",
             priority=1,
-            payload=b"benchmark"
+            payload=b"benchmark",
         )
         for i in range(count)
     ]
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print(f"INFERX ADMISSION CONTROLLER LATENCY BENCHMARK (Decisions: {count})")
-    print("="*70)
+    print("=" * 70)
 
     start_time = time.perf_counter()
-    
+
     latencies: List[float] = []
-    
+
     # Run sequential decisions to isolate microsecond measurements
     for req in requests:
         t_start = time.perf_counter()
@@ -82,7 +85,7 @@ async def run_admission_benchmark(count: int = 100000) -> None:
     print(f"p50 Decision Latency      : {p50_us:.3f} us")
     print(f"p95 Decision Latency      : {p95_us:.3f} us")
     print(f"p99 Decision Latency      : {p99_us:.3f} us")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
 
 if __name__ == "__main__":

@@ -5,8 +5,9 @@ InferX Distributed Router.
 Implements routing algorithms across cluster nodes including tenant affinity
 and sticky sessions hashes.
 """
+
 import hashlib
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from inferx.distributed.discovery import NodeRegistry
 from inferx.distributed.interfaces import NodeInfo
@@ -16,10 +17,13 @@ class DistributedRouter:
     """
     Control Plane Router resolving task destination nodes in the cluster.
     """
+
     def __init__(
         self,
         registry: NodeRegistry,
-        tenant_affinity: Optional[Dict[str, str]] = None  # tenant_id -> node_id overrides
+        tenant_affinity: Optional[
+            Dict[str, str]
+        ] = None,  # tenant_id -> node_id overrides
     ) -> None:
         self.registry = registry
         self.tenant_affinity = tenant_affinity or {}
@@ -27,7 +31,7 @@ class DistributedRouter:
     def get_route(self, tenant_id: str, model_name: str) -> Optional[NodeInfo]:
         """
         Determines the target node for a request.
-        
+
         Order of evaluation:
             1. Tenant affinity overrides.
             2. Sticky session hashing (consistent mapping).
@@ -53,5 +57,5 @@ class DistributedRouter:
         # 3. Sticky Session Hashing (consistent hash mapping)
         hash_val = int(hashlib.md5(tenant_id.encode("utf-8")).hexdigest(), 16)
         target_index = hash_val % len(nodes_to_hash)
-        
+
         return nodes_to_hash[target_index]

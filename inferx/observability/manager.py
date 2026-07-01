@@ -5,7 +5,8 @@ InferX Telemetry Manager.
 Coordinates tracing registries, Prometheus exporters, alert checks,
 and dashboard schema exports.
 """
-from typing import Any, Dict, List, Optional, Tuple
+
+from typing import Any, Dict, Optional
 import threading
 
 from inferx.observability.metrics import MetricsRegistry
@@ -21,12 +22,13 @@ class TelemetryManager:
     """
     Unified manager for Metrics, Traces, Health check aggregations, and Alerting.
     """
+
     def __init__(
         self,
         metrics_registry: Optional[MetricsRegistry] = None,
         tracer: Optional[Tracer] = None,
         health_aggregator: Optional[HealthAggregator] = None,
-        alert_manager: Optional[AlertManager] = None
+        alert_manager: Optional[AlertManager] = None,
     ) -> None:
         self.metrics = metrics_registry or MetricsRegistry()
         self.tracer = tracer or Tracer()
@@ -38,7 +40,7 @@ class TelemetryManager:
         """
         Compiles current metrics, health statuses, and tracing delays
         into a unified JSON dashboard schema.
-        
+
         Returns:
             A dictionary containing live operations statistics.
         """
@@ -50,15 +52,21 @@ class TelemetryManager:
             # Simulated dashboard query payload mapping
             snapshot = {
                 "active_connections": self._get_gauge_val("gateway_connections_active"),
-                "requests_throughput_sec": self._get_counter_val("gateway_requests_total"),
-                "avg_inference_latency_ms": self._get_gauge_val("model_inference_latency_avg_ms"),
+                "requests_throughput_sec": self._get_counter_val(
+                    "gateway_requests_total"
+                ),
+                "avg_inference_latency_ms": self._get_gauge_val(
+                    "model_inference_latency_avg_ms"
+                ),
                 "queue_depth": self._get_gauge_val("scheduler_queue_depth"),
                 "worker_utilization": self._get_gauge_val("worker_utilization_ratio"),
-                "alerts_active": len(self.alerts._triggered_alerts)
+                "alerts_active": len(self.alerts._triggered_alerts),
             }
         except Exception as e:
-            logger.warning(f"Error compiling dashboard data: {e}", component="telemetry_manager")
-            
+            logger.warning(
+                f"Error compiling dashboard data: {e}", component="telemetry_manager"
+            )
+
         return snapshot
 
     def _get_gauge_val(self, name: str) -> float:

@@ -20,7 +20,11 @@ async def run_server() -> None:
     # Initialize gateway protocols and adapter layers
     from inferx.admission.limiter import TokenBucketLimiter
     from inferx.admission.manager import AdmissionManager
-    from inferx.admission.shedder import BackpressureController, LoadShedder, CircuitBreaker
+    from inferx.admission.shedder import (
+        BackpressureController,
+        LoadShedder,
+        CircuitBreaker,
+    )
     from inferx.core.context import RuntimeContext
     from inferx.gateway.router import GatewayRouter
     from inferx.gateway.middleware import MiddlewarePipeline
@@ -36,8 +40,7 @@ async def run_server() -> None:
     admission = AdmissionManager(context, limiter, shedder, circuit_breaker)
 
     pipeline = MiddlewarePipeline(
-        admission_manager=admission,
-        allowed_api_keys=["sk-valid-key"]
+        admission_manager=admission, allowed_api_keys=["sk-valid-key"]
     )
     router = GatewayRouter()
 
@@ -51,7 +54,7 @@ async def run_server() -> None:
         port=port,
         rest_adapter=rest_adapter,
         ws_adapter=ws_adapter,
-        metrics=metrics
+        metrics=metrics,
     )
 
     # Start listening to socket connections

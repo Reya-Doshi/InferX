@@ -1,17 +1,19 @@
 # inferx/gateway/protocols.py
-from __future__ import annotations
 """
 InferX Gateway Protocol Adapters.
 
 Implements HTTP/1.1 REST parsers, Server-Sent Events (SSE) streaming formatters,
 and RFC 6455 WebSocket handshakes and framing encoders/decoders.
 """
+
+from __future__ import annotations
+
 import asyncio
 import base64
 import hashlib
 import json
 import uuid
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Callable
 
 from inferx.gateway.interfaces import IProtocolAdapter, GatewayRequestContext
 from inferx.gateway.middleware import MiddlewarePipeline, MiddlewareException
@@ -23,12 +25,12 @@ logger = get_logger("gateway.protocols")
 
 class ProtocolHelper:
     """Helper utilities for parsing raw TCP streams."""
-    
+
     @staticmethod
     async def parse_http_request(reader: Any) -> Tuple[str, str, Dict[str, str], str]:
         """
         Parses raw socket HTTP/1.1 requests.
-        
+
         Returns:
             Tuple: (method, path, headers, body).
         """
@@ -36,14 +38,14 @@ class ProtocolHelper:
         req_line_bytes = await reader.readline()
         if not req_line_bytes:
             raise ValueError("Empty connection preamble.")
-        
+
         req_line = req_line_bytes.decode("utf-8").strip()
         parts = req_line.split(" ")
         if len(parts) < 3:
             raise ValueError("Malformed request line.")
-        
+
         method, path, _ = parts
-        
+
         # Read Headers
         headers: Dict[str, str] = {}
         while True:
@@ -51,7 +53,7 @@ class ProtocolHelper:
             line = line_bytes.decode("utf-8").strip()
             if not line:
                 break
-            
+
             h_parts = line.split(":", 1)
             if len(h_parts) == 2:
                 key, val = h_parts
@@ -71,13 +73,14 @@ class RestAdapter(IProtocolAdapter):
     """
     Terminates HTTP/1.1 REST predictions request flows.
     """
+
     def __init__(
         self,
         pipeline: MiddlewarePipeline,
         router: GatewayRouter,
         run_prediction_fn: Callable[[str, str, str], Any],
         ws_adapter: Optional[WebSocketAdapter] = None,
-        telemetry_manager: Optional[Any] = None
+        telemetry_manager: Optional[Any] = None,
     ) -> None:
         self.pipeline = pipeline
         self.router = router
@@ -88,13 +91,17 @@ class RestAdapter(IProtocolAdapter):
     async def handle_connection(self, reader: Any, writer: Any) -> None:
         try:
             # 1. Parse HTTP/1.1 request
-            method, path, headers, body = await ProtocolHelper.parse_http_request(reader)
-            
+            method, path, headers, body = await ProtocolHelper.parse_http_request(
+                reader
+            )
+
             # Delegate to WebSocket if Upgrade header exists
             if headers.get("upgrade", "").lower() == "websocket" and self.ws_adapter:
-                await self.ws_adapter.handle_connection_after_handshake(reader, writer, method, path, headers)
+                await self.ws_adapter.handle_connection_after_handshake(
+                    reader, writer, method, path, headers
+                )
                 return
-            
+
             if method != "POST" or not path.endswith("/predict"):
                 # Handle simple health check endpoints
                 if method == "GET" and path in ["/health", "/healthz", "/readyz"]:
@@ -119,9 +126,9 @@ class RestAdapter(IProtocolAdapter):
                 body_dict = json.loads(body) if body else {}
             except Exception:
                 body_dict = {}
-                
+
             payload_text = body_dict.get("prompt", "")
-            
+
             # Map prompt value if 'prompt' exists, else use entire raw body
             if not payload_text and body_dict:
                 payload_text = str(body_dict)
@@ -146,26 +153,36 @@ class RestAdapter(IProtocolAdapter):
                 await self._handle_sse_stream(writer, context)
             else:
                 # Execute standard prediction
-                result = await self.run_prediction_fn(context.model_name, context.version, context.payload)
-                
+                result = await self.run_prediction_fn(
+                    context.model_name, context.version, context.payload
+                )
+
                 is_gemini = self._is_gemini_active()
                 response_data = {
                     "request_id": context.request_id,
                     "trace_id": context.trace_id,
                     "model": "gemini-2.5-flash" if is_gemini else context.model_name,
                     "version": context.version,
-                    "response": result
+                    "response": result,
                 }
                 if is_gemini:
                     response_data["provider"] = "gemini"
-                    
+
                 await self._write_json_response(writer, 200, response_data)
 
         except MiddlewareException as me:
-            await self._write_json_response(writer, me.status_code, {"error": me.args[0], "code": me.error_code})
+            await self._write_json_response(
+                writer, me.status_code, {"error": me.args[0], "code": me.error_code}
+            )
         except Exception as e:
-            logger.error(f"Internal gateway execution failure: {e}", exc_info=True, component="rest_adapter")
-            await self._write_json_response(writer, 500, {"error": "Internal Server Error"})
+            logger.error(
+                f"Internal gateway execution failure: {e}",
+                exc_info=True,
+                component="rest_adapter",
+            )
+            await self._write_json_response(
+                writer, 500, {"error": "Internal Server Error"}
+            )
         finally:
             try:
                 writer.close()
@@ -173,7 +190,9 @@ class RestAdapter(IProtocolAdapter):
             except Exception:
                 pass
 
-    async def _handle_sse_stream(self, writer: Any, context: GatewayRequestContext) -> None:
+    async def _handle_sse_stream(
+        self, writer: Any, context: GatewayRequestContext
+    ) -> None:
         """Formats and writes Server-Sent Events (SSE) token packets."""
         # Write HTTP/1.1 chunked SSE header
         headers = (
@@ -187,8 +206,10 @@ class RestAdapter(IProtocolAdapter):
         await writer.drain()
 
         # Run prediction
-        result = await self.run_prediction_fn(context.model_name, context.version, context.payload)
-        
+        result = await self.run_prediction_fn(
+            context.model_name, context.version, context.payload
+        )
+
         # Split result string into tokens (simulated word tokens)
         words = result.split(" ")
         for i, word in enumerate(words):
@@ -196,12 +217,12 @@ class RestAdapter(IProtocolAdapter):
             data_dict = {
                 "request_id": context.request_id,
                 "token": token_val,
-                "index": i
+                "index": i,
             }
             # SSE Chunk format: size_in_hex\r\ndata: ...\n\n\r\n
             data_str = f"data: {json.dumps(data_dict)}\n\n"
             chunk_bytes = data_str.encode("utf-8")
-            
+
             writer.write(f"{len(chunk_bytes):x}\r\n".encode("utf-8"))
             writer.write(chunk_bytes)
             writer.write(b"\r\n")
@@ -214,12 +235,14 @@ class RestAdapter(IProtocolAdapter):
         writer.write(f"{len(done_bytes):x}\r\n".encode("utf-8"))
         writer.write(done_bytes)
         writer.write(b"\r\n")
-        
+
         # Last zero length chunk
         writer.write(b"0\r\n\r\n")
         await writer.drain()
 
-    async def _write_json_response(self, writer: Any, status_code: int, data: dict) -> None:
+    async def _write_json_response(
+        self, writer: Any, status_code: int, data: dict
+    ) -> None:
         """Helper to write HTTP/1.1 JSON packets."""
         resp_bytes = json.dumps(data).encode("utf-8")
         status_text = "OK" if status_code == 200 else "Bad Request"
@@ -250,9 +273,10 @@ class RestAdapter(IProtocolAdapter):
         """Serves the HTML Dashboard page."""
         try:
             import os
+
             current_dir = os.path.dirname(os.path.abspath(__file__))
             dashboard_path = os.path.join(current_dir, "dashboard.html")
-            
+
             if os.path.exists(dashboard_path):
                 with open(dashboard_path, "r", encoding="utf-8") as f:
                     content = f.read()
@@ -279,7 +303,7 @@ class RestAdapter(IProtocolAdapter):
             '<rect x="18" y="32" width="12" height="42" rx="6" transform="rotate(-30 24 53)" fill="#22252a"/>'
             '<rect x="34" y="42" width="12" height="42" rx="6" transform="rotate(-30 40 63)" fill="#22252a"/>'
             '<path d="M 54 22 L 67 22 L 87 50 L 67 78 L 54 78 L 74 50 Z" fill="#3b66f5"/>'
-            '</svg>'
+            "</svg>"
         )
         resp_bytes = content.encode("utf-8")
         headers = (
@@ -296,17 +320,19 @@ class RestAdapter(IProtocolAdapter):
         """Serves live dashboard telemetry values."""
         if not self.telemetry_manager:
             import random
+
             data = {
                 "active_connections": random.randint(12, 28),
                 "requests_throughput_sec": round(random.uniform(140.0, 185.0), 2),
                 "avg_inference_latency_ms": round(random.uniform(12.4, 18.2), 2),
                 "queue_depth": random.randint(2, 8),
                 "worker_utilization": round(random.uniform(0.68, 0.82), 2),
-                "alerts_active": 0
+                "alerts_active": 0,
             }
         else:
             data = self.telemetry_manager.get_dashboard_data()
             import random
+
             if data.get("active_connections", 0) == 0:
                 data["active_connections"] = random.randint(12, 28)
             if data.get("requests_throughput_sec", 0) == 0:
@@ -328,15 +354,17 @@ class RestAdapter(IProtocolAdapter):
     def _is_gemini_active(self) -> bool:
         import os
         import sys
+
         is_testing = "unittest" in sys.modules or "pytest" in sys.modules
-        
+
         has_genai = False
         try:
-            from google import genai
+            from google import genai  # noqa: F401
+
             has_genai = True
         except ImportError:
             pass
-            
+
         return bool(has_genai and os.getenv("GEMINI_API_KEY") and not is_testing)
 
 
@@ -344,7 +372,13 @@ class WebSocketAdapter(IProtocolAdapter):
     """
     Terminates RFC 6455 WebSocket bidirection streams.
     """
-    def __init__(self, pipeline: MiddlewarePipeline, router: GatewayRouter, run_prediction_fn: Any) -> None:
+
+    def __init__(
+        self,
+        pipeline: MiddlewarePipeline,
+        router: GatewayRouter,
+        run_prediction_fn: Any,
+    ) -> None:
         self.pipeline = pipeline
         self.router = router
         self.run_prediction_fn = run_prediction_fn
@@ -353,17 +387,14 @@ class WebSocketAdapter(IProtocolAdapter):
         try:
             # 1. Parse Handshake request
             method, path, headers, _ = await ProtocolHelper.parse_http_request(reader)
-            await self.handle_connection_after_handshake(reader, writer, method, path, headers)
+            await self.handle_connection_after_handshake(
+                reader, writer, method, path, headers
+            )
         except Exception:
             pass
 
     async def handle_connection_after_handshake(
-        self,
-        reader: Any,
-        writer: Any,
-        method: str,
-        path: str,
-        headers: Dict[str, str]
+        self, reader: Any, writer: Any, method: str, path: str, headers: Dict[str, str]
     ) -> None:
         try:
             if headers.get("upgrade", "").lower() != "websocket":
@@ -394,8 +425,8 @@ class WebSocketAdapter(IProtocolAdapter):
                 # Read 2-byte WebSocket frame header
                 header_bytes = await reader.readexactly(2)
                 byte1, byte2 = header_bytes
-                
-                fin = (byte1 & 0x80) != 0
+
+                (byte1 & 0x80) != 0
                 opcode = byte1 & 0x0F
                 masked = (byte2 & 0x80) != 0
                 payload_len = byte2 & 0x7F
@@ -430,30 +461,34 @@ class WebSocketAdapter(IProtocolAdapter):
                 if opcode == 0x01:
                     text_input = payload_data.decode("utf-8")
                     req_dict = json.loads(text_input)
-                    
+
                     # Convert to headers dict for middleware
                     req_headers = {
                         "x-api-key": req_dict.get("api_key", ""),
                         "x-tenant-id": req_dict.get("tenant_id", "ws-tenant"),
                         "x-model-name": req_dict.get("model", "llama"),
-                        "x-model-version": req_dict.get("version", "latest")
+                        "x-model-version": req_dict.get("version", "latest"),
                     }
-                    
+
                     request_id = f"ws-{uuid.uuid4().hex[:6]}"
                     prompt = req_dict.get("prompt", "")
 
                     try:
                         # Validate context
-                        context = await self.pipeline.execute(request_id, req_headers, prompt)
+                        context = await self.pipeline.execute(
+                            request_id, req_headers, prompt
+                        )
                         target_model, target_version = self.router.route(context)
 
                         # Run prediction
-                        result = await self.run_prediction_fn(target_model, target_version, context.payload)
+                        result = await self.run_prediction_fn(
+                            target_model, target_version, context.payload
+                        )
 
                         # Send response frame
                         resp_dict = {
                             "request_id": context.request_id,
-                            "response": result
+                            "response": result,
                         }
                         await self._write_ws_text_frame(writer, json.dumps(resp_dict))
 
