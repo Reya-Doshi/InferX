@@ -1,0 +1,47 @@
+# deploy/helm/inferx/templates/hpa.yaml
+{{- if .Values.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "inferx.fullname" . }}-hpa
+  labels:
+    {{- include "inferx.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "inferx.fullname" . }}
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    # Custom queue depth threshold autoscaling metric via Prometheus Adapter
+    - type: Pods
+      pods:
+        metric:
+          name: inferx_queue_depth
+        target:
+          type: AverageValue
+          averageValue: {{ .Values.autoscaling.queueDepthThreshold }}
+    {{- if .Values.gpu.enabled }}
+    # Custom GPU Utilization threshold autoscaling metric via Prometheus Adapter
+    - type: External
+      external:
+        metric:
+          name: inferx_gpu_utilization
+        target:
+          type: AverageValue
+          averageValue: {{ .Values.autoscaling.gpuUtilizationThreshold }}
+    {{- end }}
+{{- end }}

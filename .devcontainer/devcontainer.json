@@ -1,0 +1,21 @@
+// .devcontainer/devcontainer.json
+{
+  "name": "InferX Developer Workspace",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "settings": {
+    "python.defaultInterpreterPath": "/usr/local/bin/python",
+    "python.linting.enabled": true,
+    "python.linting.ruffEnabled": true,
+    "python.formatting.provider": "black"
+  },
+  "extensions": [
+    "ms-python.python",
+    "charliermarsh.ruff",
+    "ms-azuretools.vscode-docker"
+  ],
+  "remoteUser": "vscode",
+  "features": {}
+}

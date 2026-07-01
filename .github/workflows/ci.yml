@@ -1,0 +1,68 @@
+# .github/workflows/ci.yml
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-format:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install Linting Tools
+        run: |
+          pip install ruff black mypy bandit
+
+      - name: Check Code Formatting (Black)
+        run: black --check inferx/ tests/
+
+      - name: Check Code Linting (Ruff)
+        run: ruff check inferx/ tests/
+
+      - name: Static Type Verification (MyPy)
+        run: mypy --ignore-missing-imports inferx/
+
+      - name: Security Scanning (Bandit)
+        run: bandit -r inferx/ -x tests/
+
+  test-suite:
+    name: Run Test Suite
+    runs-on: ubuntu-latest
+    needs: lint-and-format
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install coverage pytest
+
+      - name: Run Tests with Coverage
+        run: |
+          coverage run -m unittest discover tests/
+          coverage report -m --fail-under=80
+
+      - name: Upload Coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: .coverage

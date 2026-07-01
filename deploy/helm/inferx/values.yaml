@@ -1,0 +1,52 @@
+# deploy/helm/inferx/values.yaml
+
+replicaCount: 3
+
+image:
+  repository: inferx/runtime
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: inferx.ai
+      paths:
+        - path: /
+          pathType: Prefix
+
+resources:
+  requests:
+    cpu: "2"
+    memory: "4Gi"
+  limits:
+    cpu: "4"
+    memory: "8Gi"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+  queueDepthThreshold: 50
+  gpuUtilizationThreshold: 85
+
+gpu:
+  enabled: false
+  resources:
+    nvidia.com/gpu: "1"
+  nodeSelector:
+    gpu-node: "true"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

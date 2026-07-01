@@ -1,0 +1,148 @@
+# deploy/kubernetes/gateway.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inferx-gateway-config
+  namespace: inferx
+data:
+  INFERX_LOG_LEVEL: "INFO"
+  INFERX_GATEWAY_PORT: "8080"
+  INFERX_COORDINATOR_HOST: "inferx-coordinator-service"
+  INFERX_COORDINATOR_PORT: "19101"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: inferx-gateway-secrets
+  namespace: inferx
+type: Opaque
+data:
+  # Base64 encoded token: "super-secret-auth-token-123"
+  INFERX_AUTH_TOKEN: "c3VwZXItc2VjcmV0LWF1dGgtdG9rZW4tMTIz"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inferx-gateway
+  namespace: inferx
+  labels:
+    app: inferx-gateway
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: inferx-gateway
+  template:
+    metadata:
+      labels:
+        app: inferx-gateway
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+      - name: gateway
+        image: inferx/runtime:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        envFrom:
+        - configMapRef:
+            name: inferx-gateway-config
+        env:
+        - name: INFERX_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: inferx-gateway-secrets
+              key: INFERX_AUTH_TOKEN
+        resources:
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+        startupProbes:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 2
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          periodSeconds: 10
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 15"] # Graceful draining buffer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inferx-gateway-service
+  namespace: inferx
+spec:
+  selector:
+    app: inferx-gateway
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inferx-gateway-ingress
+  namespace: inferx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: inferx.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: inferx-gateway-service
+            port:
+              number: 80
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: inferx-gateway-pdb
+  namespace: inferx
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: inferx-gateway
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: inferx-gateway-quota
+  namespace: inferx
+spec:
+  hard:
+    pods: "10"
+    requests.cpu: "10"
+    requests.memory: "20Gi"
+    limits.cpu: "20"
+    limits.memory: "40Gi"

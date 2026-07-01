@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InferX Operational Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #060913;
+            --bg-surface: rgba(22, 28, 45, 0.45);
+            --border-glow: rgba(0, 242, 254, 0.15);
+            --primary: #00f2fe;
+            --primary-rgb: 0, 242, 254;
+            --secondary: #4facfe;
+            --secondary-rgb: 79, 172, 254;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 242, 254, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(79, 172, 254, 0.05) 0%, transparent 40%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            background: rgba(6, 9, 19, 0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-glow {
+            width: 14px;
+            height: 14px;
+            background: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--primary);
+            animation: pulse 2s infinite alternate;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem 2.5rem;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Metrics grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-top: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(16px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-top: 1px solid rgba(var(--primary-rgb), 0.4);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 15px rgba(var(--primary-rgb), 0.05);
+        }
+
+        .card-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .card-value {
+            font-size: 1.85rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .card-trend {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .trend-up { color: var(--accent-green); }
+        .trend-down { color: var(--accent-red); }
+
+        /* Playground panel */
+        .playground-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .section-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        input[type="text"], textarea, select {
+            background: rgba(6, 9, 19, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            color: var(--text-main);
+            padding: 0.75rem;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus, textarea:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.1);
+        }
+
+        .config-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #060913;
+            border: none;
+            border-radius: 8px;
+            padding: 0.85rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.4);
+            filter: brightness(1.1);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .output-box {
+            background: rgba(6, 9, 19, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            min-height: 120px;
+            max-height: 250px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            color: #00ff66;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+        }
+
+        /* Right column panels */
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* SVG Sparklines */
+        .sparkline-container {
+            width: 100%;
+            height: 60px;
+            margin-top: 0.5rem;
+        }
+
+        .sparkline-path {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .sparkline-area {
+            fill: url(#sparkline-grad);
+        }
+
+        /* Log console */
+        .log-console {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .log-list {
+            flex: 1;
+            background: rgba(6, 9, 19, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            overflow-y: auto;
+            max-height: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .log-entry {
+            line-height: 1.35;
+        }
+
+        .log-timestamp {
+            color: #555;
+        }
+
+        .log-component {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .log-info { color: #f3f4f6; }
+        .log-warn { color: var(--accent-amber); }
+        .log-err { color: var(--accent-red); }
+
+        /* Alerts list */
+        .alerts-card {
+            background: rgba(239, 68, 68, 0.03);
+            border: 1px solid rgba(239, 68, 68, 0.1);
+            border-top: 2px solid var(--accent-red);
+        }
+
+        .alerts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .alert-item {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: 6px;
+            padding: 0.65rem 0.85rem;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .alert-name {
+            font-weight: 600;
+            color: #fca5a5;
+        }
+
+        .alert-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .no-alerts {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 1rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.5); }
+            100% { transform: scale(1.1); box-shadow: 0 0 25px rgba(var(--primary-rgb), 0.9); }
+        }
+
+        /* SVG Circular Chart */
+        .circular-chart {
+            width: 100px;
+            height: 100px;
+            margin: 0.5rem auto;
+        }
+
+        .circle-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.05);
+            stroke-width: 2.8;
+        }
+
+        .circle {
+            fill: none;
+            stroke-width: 2.8;
+            stroke-linecap: round;
+            transition: stroke-dasharray 0.3s ease;
+        }
+
+        .chart-utilization .circle {
+            stroke: var(--primary);
+        }
+
+        .circular-chart-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            margin-top: 0.5rem;
+        }
+
+        .circular-chart-label {
+            text-align: center;
+        }
+
+        .percentage {
+            font-size: 0.45rem;
+            text-anchor: middle;
+            fill: var(--text-main);
+            font-weight: 700;
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-section">
+            <svg viewBox="0 0 100 100" class="logo-svg" style="width: 28px; height: 28px; filter: drop-shadow(0 0 8px rgba(59, 102, 245, 0.45));">
+                <rect x="18" y="32" width="12" height="42" rx="6" transform="rotate(-30 24 53)" fill="#ffffff"/>
+                <rect x="34" y="42" width="12" height="42" rx="6" transform="rotate(-30 40 63)" fill="#ffffff"/>
+                <path d="M 54 22 L 67 22 L 87 50 L 67 78 L 54 78 L 74 50 Z" fill="#3b66f5"/>
+            </svg>
+            <h1 style="margin-left: 0.25rem;">InferX Operations Center</h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <div class="status-badge" id="runtime-status-badge">
+                <div class="status-dot"></div>
+                <span id="runtime-status-text">RUNNING</span>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">
+                Uptime: <span id="uptime-display" style="color: var(--text-main); font-family: monospace;">00:00:00</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="left-column">
+            <!-- Metrics Row -->
+            <div class="metrics-grid">
+                <!-- Throughput -->
+                <div class="card">
+                    <div class="card-label">Active Throughput</div>
+                    <div class="card-value"><span id="metric-throughput">0.0</span> <span style="font-size: 1rem; color: var(--text-muted);">RPS</span></div>
+                    <div class="sparkline-container">
+                        <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="sparkline-grad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.25"/>
+                                    <stop offset="100%" stop-color="var(--primary)" stop-opacity="0"/>
+                                </linearGradient>
+                            </defs>
+                            <path class="sparkline-area" id="throughput-area" d=""/>
+                            <path class="sparkline-path" id="throughput-path" d=""/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Latency -->
+                <div class="card">
+                    <div class="card-label">Avg Latency</div>
+                    <div class="card-value"><span id="metric-latency">0.0</span> <span style="font-size: 1rem; color: var(--text-muted);">ms</span></div>
+                    <div class="sparkline-container">
+                        <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
+                            <path class="sparkline-area" id="latency-area" d="" style="fill: url(#sparkline-grad-sec);"/>
+                            <path class="sparkline-path" id="latency-path" d="" style="stroke: var(--secondary);"/>
+                            <defs>
+                                <linearGradient id="sparkline-grad-sec" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="var(--secondary)" stop-opacity="0.25"/>
+                                    <stop offset="100%" stop-color="var(--secondary)" stop-opacity="0"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- GPU/Worker utilization -->
+                <div class="card">
+                    <div class="card-label">Engine Telemetry</div>
+                    <div class="circular-chart-container">
+                        <div class="circular-chart-label">
+                            <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary);" id="metric-utilization">0%</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-top: 0.25rem;">GPU LOAD</div>
+                        </div>
+                        <svg viewBox="0 0 36 36" class="circular-chart chart-utilization">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            <path class="circle" id="utilization-circle" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Queue Depth -->
+                <div class="card">
+                    <div class="card-label">Concurrency</div>
+                    <div class="card-value" style="font-size: 2.2rem; margin-top: 0.5rem;" id="metric-queue">0</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-top: 0.5rem;" id="connections-label">
+                        Active Connections: 0
+                    </div>
+                    <!-- Small loading bar representation -->
+                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-top: 0.75rem; overflow: hidden;">
+                        <div id="queue-bar-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playground panel -->
+            <div class="card playground-card">
+                <div class="section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Inference Playground
+                </div>
+                
+                <div class="config-row">
+                    <div class="input-group">
+                        <label for="input-model">Model Engine</label>
+                        <select id="input-model">
+                            <option value="llama">llama:latest (v2.0)</option>
+                            <option value="llama:v1.0">llama:v1.0</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="input-key">API Auth Bearer Token</label>
+                        <input type="text" id="input-key" value="sk-valid-key" placeholder="Bearer key">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="input-prompt">Input Prompt</label>
+                    <textarea id="input-prompt" rows="3" placeholder="Enter your model prompt query here..."></textarea>
+                </div>
+
+                <button class="btn" id="btn-submit">
+                    <span id="btn-text">Execute Inference Request</span>
+                </button>
+
+                <div class="input-group">
+                    <label>Terminal Execution Output</label>
+                    <div class="output-box" id="output-box">// Execution results will project here...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <!-- Active Alerts -->
+            <div class="card alerts-card">
+                <div class="section-title" style="color: #fca5a5; border-bottom-color: rgba(239, 68, 68, 0.15);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></polygon><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    Triggered Alerts
+                </div>
+                <div class="alerts-list" id="alerts-list">
+                    <div class="no-alerts" id="no-alerts-placeholder">
+                        <div style="font-size: 1.5rem;">🎉</div>
+                        <div>No active alerts triggered</div>
+                        <div style="font-size: 0.75rem; color: #6b7280;">SLA parameters are healthy</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Log Console -->
+            <div class="card log-console">
+                <div class="section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>
+                    Gossip Cluster Logs
+                </div>
+                <div class="log-list" id="log-list">
+                    <!-- Log entries append here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Store historical data for charts
+        const throughputHistory = Array(15).fill(0);
+        const latencyHistory = Array(15).fill(0);
+        const startTime = Date.now();
+
+        // DOM elements
+        const throughputVal = document.getElementById('metric-throughput');
+        const latencyVal = document.getElementById('metric-latency');
+        const utilizationVal = document.getElementById('metric-utilization');
+        const queueVal = document.getElementById('metric-queue');
+        const connectionsLabel = document.getElementById('connections-label');
+        const queueBarFill = document.getElementById('queue-bar-fill');
+        const utilizationCircle = document.getElementById('utilization-circle');
+        const outputBox = document.getElementById('output-box');
+        const btnSubmit = document.getElementById('btn-submit');
+        const btnText = document.getElementById('btn-text');
+        const logList = document.getElementById('log-list');
+        const uptimeDisplay = document.getElementById('uptime-display');
+        const alertsList = document.getElementById('alerts-list');
+        const noAlertsPlaceholder = document.getElementById('no-alerts-placeholder');
+
+        // Draw SVG path from historical points
+        function drawSparkline(elementId, areaId, data, maxVal) {
+            const pathEl = document.getElementById(elementId);
+            const areaEl = document.getElementById(areaId);
+            if (!pathEl || data.length === 0) return;
+
+            const width = 100;
+            const height = 30;
+            const points = data.map((val, idx) => {
+                const x = (idx / (data.length - 1)) * width;
+                const ratio = maxVal > 0 ? val / maxVal : 0;
+                const y = height - (ratio * (height - 4)) - 2;
+                return { x, y };
+            });
+
+            const dPath = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+            pathEl.setAttribute('d', dPath);
+
+            const dArea = `${dPath} L 100 30 L 0 30 Z`;
+            areaEl.setAttribute('d', dArea);
+        }
+
+        // Add dummy cluster log entries
+        const mockComponents = ['gateway', 'supervisor', 'admission', 'scheduler', 'event_bus', 'rpc_server', 'model_runtime'];
+        const mockMessages = [
+            { level: 'info', text: 'Telemetry metrics push emitted successfully.' },
+            { level: 'info', text: 'Worker thread allocations refreshed on CUDA Stream 0.' },
+            { level: 'info', text: 'Gossip heartbeat packet dispatched to node-2.' },
+            { level: 'info', text: 'Admission Controller evaluated queue depth capacity bounds.' },
+            { level: 'warn', text: 'VRAM utilization approaching watermark limit.' },
+            { level: 'info', text: 'Canary route traffic weights parsed.' }
+        ];
+
+        function addLogEntry(level, component, text) {
+            const timeStr = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            
+            let colorClass = 'log-info';
+            if (level === 'warn') colorClass = 'log-warn';
+            if (level === 'err') colorClass = 'log-err';
+
+            entry.innerHTML = `<span class="log-timestamp">[${timeStr}]</span> <span class="log-component">[${component}]</span> <span class="${colorClass}">${text}</span>`;
+            
+            logList.appendChild(entry);
+            logList.scrollTop = logList.scrollHeight;
+
+            // Keep log count under 50
+            if (logList.children.length > 50) {
+                logList.removeChild(logList.firstChild);
+            }
+        }
+
+        // Generate dynamic cluster alerts based on metrics
+        const alertsTracker = {};
+
+        function updateAlerts(metrics) {
+            const alerts = [];
+            if (metrics.worker_utilization > 0.81) {
+                alerts.push({ name: 'Engine Congestion Alarm', desc: 'GPU load > 80%' });
+            }
+            if (metrics.queue_depth > 6) {
+                alerts.push({ name: 'High Ingress Queueing', desc: 'Queue backlog accumulating' });
+            }
+            
+            // Clean alerts UI
+            const alertItems = alertsList.querySelectorAll('.alert-item');
+            alertItems.forEach(el => el.remove());
+
+            if (alerts.length === 0) {
+                noAlertsPlaceholder.style.display = 'flex';
+            } else {
+                noAlertsPlaceholder.style.display = 'none';
+                alerts.forEach(alert => {
+                    const item = document.createElement('div');
+                    item.className = 'alert-item';
+                    item.innerHTML = `
+                        <div>
+                            <div class="alert-name">${alert.name}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${alert.desc}</div>
+                        </div>
+                        <span class="alert-time">Active</span>
+                    `;
+                    alertsList.appendChild(item);
+                });
+            }
+        }
+
+        // Periodically fetch operational stats
+        async function fetchMetrics() {
+            try {
+                const res = await fetch('/api/metrics');
+                if (res.status === 200) {
+                    const data = await res.json();
+                    
+                    // Update numerical values
+                    throughputVal.textContent = data.requests_throughput_sec.toFixed(1);
+                    latencyVal.textContent = data.avg_inference_latency_ms.toFixed(1);
+                    utilizationVal.textContent = Math.round(data.worker_utilization * 100) + '%';
+                    queueVal.textContent = data.queue_depth;
+                    connectionsLabel.textContent = `Active Connections: ${data.active_connections}`;
+
+                    // Dynamically update model selector options based on active provider
+                    const modelSelect = document.getElementById('input-model');
+                    if (data.is_gemini_active && modelSelect) {
+                        const hasGeminiOpt = modelSelect.querySelector('option[value="gemini-2.5-flash"]');
+                        if (!hasGeminiOpt) {
+                            modelSelect.innerHTML = `
+                                <option value="gemini-2.5-flash" selected>gemini:gemini-2.5-flash (Google GenAI)</option>
+                                <option value="llama">llama:latest (v2.0) [Mock]</option>
+                                <option value="llama:v1.0">llama:v1.0 [Mock]</option>
+                            `;
+                        }
+                    } else if (modelSelect) {
+                        const hasGeminiOpt = modelSelect.querySelector('option[value="gemini-2.5-flash"]');
+                        if (hasGeminiOpt) {
+                            modelSelect.innerHTML = `
+                                <option value="llama" selected>llama:latest (v2.0)</option>
+                                <option value="llama:v1.0">llama:v1.0</option>
+                            `;
+                        }
+                    }
+
+                    // Update charts
+                    throughputHistory.push(data.requests_throughput_sec);
+                    throughputHistory.shift();
+                    drawSparkline('throughput-path', 'throughput-area', throughputHistory, 250);
+
+                    latencyHistory.push(data.avg_inference_latency_ms);
+                    latencyHistory.shift();
+                    drawSparkline('latency-path', 'latency-area', latencyHistory, 25);
+
+                    // Update SVG Progress circle
+                    const dashVal = Math.round(data.worker_utilization * 100);
+                    utilizationCircle.setAttribute('stroke-dasharray', `${dashVal}, 100`);
+
+                    // Update bar progress
+                    const barWidth = Math.min((data.queue_depth / 15) * 100, 100);
+                    queueBarFill.style.width = barWidth + '%';
+
+                    // Update alerts
+                    updateAlerts(data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch operational stats: ", err);
+            }
+        }
+
+        // Periodic simulation loops
+        setInterval(fetchMetrics, 1200);
+
+        setInterval(() => {
+            const comp = mockComponents[Math.floor(Math.random() * mockComponents.length)];
+            const msg = mockMessages[Math.floor(Math.random() * mockMessages.length)];
+            addLogEntry(msg.level, comp, msg.text);
+        }, 3500);
+
+        // Update Uptime clock
+        setInterval(() => {
+            const diff = Date.now() - startTime;
+            const secs = Math.floor(diff / 1000) % 60;
+            const mins = Math.floor(diff / 60000) % 60;
+            const hrs = Math.floor(diff / 3600000);
+            
+            uptimeDisplay.textContent = 
+                String(hrs).padStart(2, '0') + ':' + 
+                String(mins).padStart(2, '0') + ':' + 
+                String(secs).padStart(2, '0');
+        }, 1000);
+
+        // Initial setup
+        fetchMetrics();
+        addLogEntry('info', 'gateway', 'Operations Center console interface loaded successfully.');
+        addLogEntry('info', 'supervisor', 'Connected to CUDA runtime core and active worker pool.');
+
+        // PlayGround Inferences trigger
+        btnSubmit.addEventListener('click', async () => {
+            const prompt = document.getElementById('input-prompt').value.trim();
+            const model = document.getElementById('input-model').value;
+            const apiKey = document.getElementById('input-key').value.trim();
+
+            if (!prompt) {
+                alert("Please enter a query prompt.");
+                return;
+            }
+
+            btnSubmit.disabled = true;
+            btnText.textContent = "Processing tensor execution...";
+            outputBox.textContent = "// Initiating HTTP stream request...";
+            outputBox.style.color = '#ef4444'; // Red-orange loading state
+
+            const requestStart = performance.now();
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        model: model
+                    })
+                });
+
+                const data = await response.json();
+                const latency = (performance.now() - requestStart).toFixed(2);
+                
+                outputBox.style.color = '#00ff66'; // Green success output
+                outputBox.textContent = JSON.stringify(data, null, 4);
+
+                addLogEntry('info', 'model_runtime', `E2E Prediction resolved. Model: ${model} | Latency: ${latency}ms`);
+            } catch (err) {
+                outputBox.style.color = '#ef4444';
+                outputBox.textContent = `// Execution Failure:\n${err.message}`;
+                addLogEntry('err', 'gateway', `Inference request failed: ${err.message}`);
+            } finally {
+                btnSubmit.disabled = false;
+                btnText.textContent = "Execute Inference Request";
+            }
+        });
+    </script>
+</body>
+</html>

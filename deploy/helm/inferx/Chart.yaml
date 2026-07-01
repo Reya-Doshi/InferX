@@ -1,0 +1,6 @@
+apiVersion: v2
+name: inferx
+description: A production-grade distributed AI inference engine Helm chart.
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

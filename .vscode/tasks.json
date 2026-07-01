@@ -1,0 +1,37 @@
+// .vscode/tasks.json
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Unit Tests",
+      "type": "shell",
+      "command": "python -m unittest discover tests/",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Run Benchmarks",
+      "type": "shell",
+      "command": "python -m tests.benchmark_performance",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Lint Code (Ruff)",
+      "type": "shell",
+      "command": "ruff check inferx/ tests/",
+      "problemMatcher": []
+    }
+  ]
+}

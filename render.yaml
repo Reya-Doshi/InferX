@@ -1,0 +1,14 @@
+# render.yaml
+services:
+  - type: web
+    name: inferx-gateway
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m deploy.render.start_gateway
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: INFERX_LOG_LEVEL
+        value: INFO
+      - key: PYTHONUNBUFFERED
+        value: "1"

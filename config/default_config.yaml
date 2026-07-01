@@ -1,0 +1,26 @@
+log_level: "INFO"
+
+gateway:
+  host: "0.0.0.0"
+  port: 8000
+  timeout_ms: 30000
+
+admission:
+  max_concurrency: 1000
+  rate_limit_capacity: 100
+  rate_limit_refill_rate: 20.0
+  vram_high_watermark: 0.90
+
+scheduler:
+  type: "priority"
+  max_priority_levels: 5
+  priority_aging_threshold_ms: 5000
+
+batcher:
+  max_batch_size: 32
+  max_queue_delay_ms: 10
+
+worker:
+  gpus: [0]
+  heartbeat_timeout_ms: 2000
+  shm_size_bytes: 1073741824

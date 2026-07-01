@@ -1,0 +1,81 @@
+# deploy/docker/docker-compose.yml
+version: '3.8'
+
+services:
+  coordinator:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: inferx-coordinator
+    environment:
+      - INFERX_NODE_ID=node-1
+      - INFERX_HOST=0.0.0.0
+      - INFERX_PORT=19101
+      - INFERX_PEERS=[]
+      - INFERX_HOSTED_MODELS=llama,gpt
+      - INFERX_LOG_LEVEL=INFO
+    ports:
+      - "19101:19101"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s = socket.socket(); s.connect(('127.0.0.1', 19101))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  worker-1:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: inferx-worker-1
+    depends_on:
+      coordinator:
+        condition: service_healthy
+    environment:
+      - INFERX_NODE_ID=node-2
+      - INFERX_HOST=0.0.0.0
+      - INFERX_PORT=19102
+      - INFERX_PEERS=[{"node_id": "node-1", "host": "coordinator", "port": 19101}]
+      - INFERX_HOSTED_MODELS=llama
+      - INFERX_LOG_LEVEL=INFO
+      - CUDA_VISIBLE_DEVICES=0
+    ports:
+      - "19102:19102"
+    restart: unless-stopped
+
+  worker-2:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: inferx-worker-2
+    depends_on:
+      coordinator:
+        condition: service_healthy
+    environment:
+      - INFERX_NODE_ID=node-3
+      - INFERX_HOST=0.0.0.0
+      - INFERX_PORT=19103
+      - INFERX_PEERS=[{"node_id": "node-1", "host": "coordinator", "port": 19101}]
+      - INFERX_HOSTED_MODELS=gpt
+      - INFERX_LOG_LEVEL=INFO
+      - CUDA_VISIBLE_DEVICES=1
+    ports:
+      - "19103:19103"
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: inferx-gateway
+    depends_on:
+      coordinator:
+        condition: service_healthy
+    environment:
+      - INFERX_GATEWAY_PORT=8080
+      - INFERX_COORDINATOR_HOST=coordinator
+      - INFERX_COORDINATOR_PORT=19101
+      - INFERX_LOG_LEVEL=INFO
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

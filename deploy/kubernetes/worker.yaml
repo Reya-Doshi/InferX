@@ -1,0 +1,159 @@
+# deploy/kubernetes/worker.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inferx-worker-config
+  namespace: inferx
+data:
+  INFERX_LOG_LEVEL: "INFO"
+  INFERX_HOST: "0.0.0.0"
+  INFERX_PORT: "19102"
+  INFERX_PEERS: '[{"node_id": "node-1", "host": "inferx-coordinator-service.inferx.svc.cluster.local", "port": 19101}]'
+  INFERX_HOSTED_MODELS: "llama,gpt"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: inferx-worker
+  namespace: inferx
+  labels:
+    app: inferx-worker
+spec:
+  serviceName: inferx-worker-headless
+  replicas: 4
+  selector:
+    matchLabels:
+      app: inferx-worker
+  template:
+    metadata:
+      labels:
+        app: inferx-worker
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: gpu-node
+                operator: In
+                values:
+                - "true"
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+      - name: worker
+        image: inferx/runtime:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 19102
+          name: rpc
+        envFrom:
+        - configMapRef:
+            name: inferx-worker-config
+        resources:
+          requests:
+            cpu: "4"
+            memory: "16Gi"
+            nvidia.com/gpu: "1" # Request exactly 1 GPU from NVIDIA device plugin
+          limits:
+            cpu: "8"
+            memory: "32Gi"
+            nvidia.com/gpu: "1" # MIG compatibility (e.g., 1g.5gb MIG slice)
+        volumeMounts:
+        - name: model-cache
+          mountPath: /models
+        startupProbes:
+          exec:
+            command: ["python", "-c", "import socket; s = socket.socket(); s.connect(('127.0.0.1', 19102))"]
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 20
+        readinessProbe:
+          exec:
+            command: ["python", "-c", "import socket; s = socket.socket(); s.connect(('127.0.0.1', 19102))"]
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command: ["python", "-c", "import socket; s = socket.socket(); s.connect(('127.0.0.1', 19102))"]
+          periodSeconds: 20
+        lifecycle:
+          preStop:
+            exec:
+              command: ["python", "-m", "inferx.utils.drain"] # Trigger worker graceful draining
+  volumeClaimTemplates:
+  - metadata:
+      name: model-cache
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 100Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inferx-worker-headless
+  namespace: inferx
+spec:
+  clusterIP: None
+  selector:
+    app: inferx-worker
+  ports:
+  - port: 19102
+    name: rpc
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: inferx-worker-netpolicy
+  namespace: inferx
+spec:
+  podSelector:
+    matchLabels:
+      app: inferx-worker
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: inferx-gateway
+    - podSelector:
+        matchLabels:
+          app: inferx-worker # Allow inter-node communication for gossip and cluster replication
+    ports:
+    - protocol: TCP
+      port: 19102
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: inferx-worker
+    ports:
+    - protocol: TCP
+      port: 19102
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: inferx-worker-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "nodes"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: inferx-worker-rb
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: inferx
+roleRef:
+  kind: ClusterRole
+  name: inferx-worker-role
+  apiGroup: rbac.authorization.k8s.io
