@@ -1,6 +1,6 @@
 # InferX
 
-[![CI](https://github.com/inferx-ai/inferx/actions/workflows/ci.yml/badge.svg)](https://github.com/inferx-ai/inferx/actions/workflows/ci.yml)
+[![CI](https://github.com/Reya-Doshi/InferX/actions/workflows/ci.yml/badge.svg)](https://github.com/Reya-Doshi/InferX/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-Compatible-blue.svg)](deploy/kubernetes/)
 
@@ -8,7 +8,9 @@ InferX is a production-grade, distributed AI inference engine designed for cloud
 
 ## Demonstration
 
-<video src="https://github.com/Reya-Doshi/InferX/raw/main/InferX.mp4" width="100%" controls></video>
+https://github.com/Reya-Doshi/InferX/blob/main/InferX.mp4?raw=true
+
+<video src="https://raw.githubusercontent.com/Reya-Doshi/InferX/main/InferX.mp4" controls="controls" width="100%"></video>
 
 ---
 
