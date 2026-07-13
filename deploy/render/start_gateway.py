@@ -30,6 +30,22 @@ async def run_server() -> None:
     from inferx.gateway.middleware import MiddlewarePipeline
 
     async def mock_predict(model_name: str, version: str, prompt: str) -> str:
+        from dotenv import load_dotenv
+
+        load_dotenv()
+        api_key = os.getenv("GEMINI_API_KEY")
+        if api_key:
+            try:
+                from google import genai
+
+                client = genai.Client(api_key=api_key)
+                response = await client.aio.models.generate_content(
+                    model="gemini-2.5-flash", contents=prompt
+                )
+                return response.text or ""
+            except Exception as e:
+                logger.error(f"Error calling Gemini API: {e}", exc_info=True)
+                return f"Error calling Gemini API: {e}"
         return f"processed_{model_name}_{version}_{prompt}"
 
     context = RuntimeContext()
