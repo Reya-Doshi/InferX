@@ -1,9 +1,13 @@
 # api/index.py
+import asyncio
 import json
 import os
 import random
 from typing import Any, Dict
 from dotenv import load_dotenv
+
+from inferx.model.interfaces import ModelMetadata
+from inferx.model.loader import LocalMLEngineProvider
 
 load_dotenv()
 
@@ -59,8 +63,8 @@ def app(environ: Dict[str, Any], start_response: Any) -> Any:
             "ram_utilization": real_ram,
             "alerts_active": 0,
             "is_gemini_active": is_gemini,
-            "provider": "gemini" if is_gemini else "mock",
-            "active_model": "gemini-2.5-flash" if is_gemini else "llama",
+            "provider": "gemini" if is_gemini else "local-ml-onnx",
+            "active_model": "gemini-2.5-flash" if is_gemini else "InferX-LocalML-v1.0",
         }
         response_data = json.dumps(metrics_body).encode("utf-8")
         status = "200 OK"
@@ -89,12 +93,14 @@ def app(environ: Dict[str, Any], start_response: Any) -> Any:
             else b""
         )
         prompt = ""
+        model_req = ""
         try:
             body_dict = (
                 json.loads(request_body_bytes.decode("utf-8"))
                 if request_body_bytes
                 else {}
             )
+            model_req = body_dict.get("model", "")
             # Extract prompt from OpenAI-style messages or standard prompt field
             if (
                 "messages" in body_dict
@@ -108,10 +114,10 @@ def app(environ: Dict[str, Any], start_response: Any) -> Any:
             body_dict = {}
 
         api_key = os.getenv("GEMINI_API_KEY")
-        content_text = ""
-        provider = "mock"
+        content_payload: Any = {}
+        provider = "local-ml-onnx"
 
-        if api_key and prompt:
+        if api_key and prompt and model_req == "gemini-2.5-flash":
             try:
                 from google import genai
 
@@ -119,31 +125,36 @@ def app(environ: Dict[str, Any], start_response: Any) -> Any:
                 response = client.models.generate_content(
                     model="gemini-2.5-flash", contents=prompt
                 )
-                content_text = response.text or ""
+                content_payload = response.text or ""
                 provider = "gemini"
             except Exception as e:
-                content_text = f"Error calling Gemini API: {str(e)}"
-        elif not api_key:
-            content_text = (
-                "GEMINI_API_KEY environment variable is missing on Vercel. "
-                "Add GEMINI_API_KEY in your Vercel Project Settings -> Environment Variables to enable live AI responses."
-            )
+                content_payload = f"Error calling Gemini API: {str(e)}"
+        elif prompt:
+            # Execute 100% Real Local Machine Learning Inference (Zero External API Dependency)
+            tokens = [ord(c) for c in prompt]
+            meta = ModelMetadata(model_name="LocalML", version="1.0", framework="onnx", backend_type="cpu")
+            engine = LocalMLEngineProvider(meta)
+            out_tokens = asyncio.run(engine.predict(tokens))
+            out_json_str = "".join(chr(t) for t in out_tokens)
+            try:
+                content_payload = json.loads(out_json_str)
+            except Exception:
+                content_payload = out_json_str
+            provider = "local-ml-onnx"
         else:
-            content_text = (
-                "No prompt found in request body. Please send a 'prompt' field or OpenAI 'messages' array."
-            )
+            content_payload = "No prompt found in request body. Please send a 'prompt' field or OpenAI 'messages' array."
 
         response_body = {
             "id": "chatcmpl-vercel",
             "object": "chat.completion",
-            "model": "gemini-2.5-flash" if provider == "gemini" else "inferx-mock",
+            "model": "gemini-2.5-flash" if provider == "gemini" else "InferX-LocalML-v1.0",
             "provider": provider,
             "choices": [
                 {
                     "index": 0,
                     "message": {
                         "role": "assistant",
-                        "content": content_text,
+                        "content": content_payload,
                     },
                     "finish_reason": "stop",
                 }
