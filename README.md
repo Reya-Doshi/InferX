@@ -31,6 +31,7 @@ We have uploaded a detailed walkthrough video demonstrating the distributed fail
 *   ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white) - Reproducible, multi-platform runtime environments.
 *   ![Helm](https://img.shields.io/badge/Helm-0F162D?style=for-the-badge&logo=helm&logoColor=white) - Kubernetes package manager for deployment templates.
 *   ![Render](https://img.shields.io/badge/Render-%2346E3B7.svg?style=for-the-badge&logo=render&logoColor=white) - Automatic blueprint builds and live web service hosting.
+*   ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white) - Serverless REST gateway for OpenAI-compatible completions.
 
 ### Protocols & Data Layers
 *   ![JSON-RPC](https://img.shields.io/badge/JSON--RPC-404040?style=for-the-badge) - Secure, schema-validated inter-node RPC communications.
@@ -38,6 +39,7 @@ We have uploaded a detailed walkthrough video demonstrating the distributed fail
 
 ### Observability & Automated QA
 *   ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=Prometheus&logoColor=white) - Metric exporter for time-series throughput and latency tracking.
+*   ![Psutil](https://img.shields.io/badge/Psutil-4183C4?style=for-the-badge) - Real-time CPU and RAM system hardware telemetry.
 *   ![Pytest](https://img.shields.io/badge/Pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white) - Scalable testing framework with code coverage reports.
 *   ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white) - Automated CI pipelines verifying format, lint, and test suites.
 
@@ -45,10 +47,11 @@ We have uploaded a detailed walkthrough video demonstrating the distributed fail
 
 ## ⚡ Key Features
 
+*   **Live Generative AI Integration:** Powered by Google Gemini (`gemini-2.5-flash`) for real-time model completions across serverless and dedicated deployments.
+*   **Real-Time Hardware Telemetry:** Host CPU and RAM utilization tracking via `psutil`, plus NVIDIA GPU VRAM metrics via `pynvml` (with automatic simulated fallbacks on CPU-only containers).
 *   **Distributed Control Plane:** Fully distributed membership tracking with Gossip heartbeats, Raft-inspired consensus leader elections, and config metadata replication.
 *   **Dynamic Batching & Priority Scheduling:** Priority queues sorting and batching queries based on real-time hardware stream availability.
-*   **Worker & Model Runtime Management:** GPU tensor pinned-memory allocations, automatic worker liveness monitors, and lazy-loaded model version switching.
-*   **Cloud-Native Ingress Gateway:** Protocol agnostic endpoint supporting HTTP, gRPC, and Server-Sent Events (SSE).
+*   **Cloud-Native Ingress Gateway:** Protocol-agnostic endpoint supporting REST HTTP/1.1, Server-Sent Events (SSE), WebSockets, and OpenAI-compatible `/v1/chat/completions`.
 *   **Kubernetes Ready:** Production Helm charts integrating custom queue-depth and GPU utilization autoscaling triggers.
 
 ---
@@ -57,13 +60,13 @@ We have uploaded a detailed walkthrough video demonstrating the distributed fail
 
 ```mermaid
 graph TD
-    Client[Client Gateway Request] --> Gateway[InferX Ingress Gateway]
+    Client[Client Gateway Request] --> Gateway[InferX Ingress Gateway / Vercel Serverless]
     Gateway --> Admission[Admission Controller / Queue]
     Admission --> Scheduler[Distributed Scheduler]
     Scheduler --> Coordinator[Raft Leader Node]
-    Coordinator -->|RPC Delegate| RemoteWorker[Remote GPU Worker Node]
+    Coordinator -->|RPC Delegate| RemoteWorker[Remote GPU / Gemini Worker Node]
     Scheduler -->|Local stream| LocalBatcher[Dynamic Batcher]
-    LocalBatcher -->|CUDA Stream| GPURuntime[Model Runtime Engine]
+    LocalBatcher -->|CUDA Stream / API| GPURuntime[Model Runtime Engine]
 ```
 
 ### Deep Dive Modules
@@ -71,7 +74,7 @@ graph TD
 *   **Admission System:** Features backpressure controllers, load shedders, token-bucket rate limiters, and circuit breakers.
 *   **Zero-Copy Shared Memory:** Bypasses Python serialization bottlenecks using `SharedMemoryPool` for ultra-low latency IPC between processes.
 
-For a detailed review of internal modules, see [ARCHITECTURE.md](file:///c:/Users/lenovo/OneDrive/Desktop/ReyaWeb/InferX/docs/architecture.md).
+For a detailed review of internal modules, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
@@ -85,16 +88,22 @@ cd InferX
 pip install -r requirements.txt
 ```
 
+### Live AI Environment Configuration
+To enable live AI inference responses instead of mock data, set your Google Gemini API key:
+```bash
+# In your .env file or environment
+GEMINI_API_KEY=your_google_gemini_api_key_here
+```
+
 ### Run a Single Node Instance
-Start a mock single-node gateway instance locally:
+Start a gateway instance locally:
 ```python
 import asyncio
 from inferx.core.bootstrap import bootstrap_node
-from inferx.core.config import AsyncYAMLConfigLoader
 
 async def main():
     print("Initializing InferX Node...")
-    # Launches gateway REST/WebSocket endpoints and mock runtimes
+    # Launches gateway REST/WebSocket endpoints and active model runtimes
     await bootstrap_node(port=10000)
 
 if __name__ == "__main__":
