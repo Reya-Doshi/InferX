@@ -800,10 +800,11 @@
 
             const requestStart = performance.now();
             try {
-                const response = await fetch('/predict', {
+                let response = await fetch('/predict', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'x-api-key': apiKey,
                         'Authorization': `Bearer ${apiKey}`
                     },
                     body: JSON.stringify({
@@ -811,6 +812,19 @@
                         model: model
                     })
                 });
+
+                if (!response.ok) {
+                    response = await fetch('/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            prompt: prompt,
+                            model: model
+                        })
+                    });
+                }
 
                 const data = await response.json();
                 const latency = (performance.now() - requestStart).toFixed(2);
