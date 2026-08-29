@@ -29,7 +29,7 @@
   - [Render Cloud Deployment](#1-render-cloud-deployment)
   - [Vercel Serverless Gateway](#2-vercel-serverless-gateway)
   - [Docker & Kubernetes](#3-docker--kubernetes)
-- [API Specification](#-api-specification)
+- [API Specification & Error Handling](#-api-specification--error-handling)
 - [Hardware Telemetry & Metrics](#-hardware-telemetry--metrics)
 - [Benchmarks & SLA Compliance](#-benchmarks--sla-compliance)
 - [Contributing](#-contributing)
@@ -73,12 +73,12 @@ Watch our walkthrough video demonstrating distributed failover, load-shedding co
 ```mermaid
 graph TD
     Client[Client Gateway Request] --> Gateway[InferX Ingress Gateway / Vercel Serverless]
-    Gateway --> Admission[Admission Controller / Queue]
+    Gateway --> Admission[Admission Controller / Token-Bucket Queue]
     Admission --> Scheduler[Distributed Scheduler]
     Scheduler --> Coordinator[Raft Leader Node]
-    Coordinator -->|RPC Delegate| RemoteWorker[Remote GPU / Gemini Worker Node]
-    Scheduler -->|Local stream| LocalBatcher[Dynamic Batcher]
-    LocalBatcher -->|CUDA Stream / API| GPURuntime[Model Runtime Engine]
+    Coordinator -->|RPC Delegate| RemoteWorker[Remote Worker Node]
+    Scheduler -->|Local Stream| LocalBatcher[Dynamic Batcher]
+    LocalBatcher -->|Shared Memory / CUDA Stream| GPURuntime[Model Engine Provider]
 ```
 
 ### Module Breakdown
@@ -136,14 +136,22 @@ InferX/
 
 ## 🚀 Quick Start & Installation
 
-### 1. Clone & Install Dependencies
+### Step 1: Clone Repository
 ```bash
 git clone https://github.com/Reya-Doshi/InferX.git
+```
+
+### Step 2: Navigate to Directory
+```bash
 cd InferX
+```
+
+### Step 3: Install Production Dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure Live AI Environment
+### Step 4: Configure Environment Variables
 Create a `.env` file in the project root:
 ```env
 GEMINI_API_KEY=your_google_gemini_api_key_here
@@ -151,18 +159,24 @@ PORT=10000
 LOG_LEVEL=INFO
 ```
 
-### 3. Run Locally
-Start a single-node gateway instance:
+### Step 5: Run Single Node Server
+Launch a local gateway server:
 ```python
+# run_node.py
 import asyncio
 from inferx.core.bootstrap import bootstrap_node
 
 async def main():
-    print("Initializing InferX Node...")
+    print("Initializing InferX Gateway Node...")
     await bootstrap_node(port=10000)
 
 if __name__ == "__main__":
     asyncio.run(main())
+```
+
+Run via terminal:
+```bash
+python run_node.py
 ```
 
 ---
@@ -171,28 +185,31 @@ if __name__ == "__main__":
 
 ### 1. Render Cloud Deployment
 Deploy directly to Render using the included [`render.yaml`](render.yaml) Blueprint:
-- Entry point: `deploy/render/start_gateway.py`
+- **Entry point:** `deploy/render/start_gateway.py`
 - Set `GEMINI_API_KEY` in your Render Environment Variables for live AI completions.
 
 ### 2. Vercel Serverless Gateway
 Deploy as a high-speed Serverless Function on Vercel using [`vercel.json`](vercel.json):
-- Entry point: `api/index.py`
+- **Entry point:** `api/index.py`
 - Open your Vercel Dashboard $\rightarrow$ **Settings** $\rightarrow$ **Environment Variables** and add `GEMINI_API_KEY`.
 
 ### 3. Docker & Kubernetes
 Build and launch containerized clusters:
+
 ```bash
 # Docker Build & Run
 docker build -t inferx:latest .
 docker run -p 10000:10000 -e GEMINI_API_KEY=your_key inferx:latest
+```
 
+```bash
 # Kubernetes Helm Deployment
 helm install inferx deploy/kubernetes/
 ```
 
 ---
 
-## 🔌 API Specification
+## 🔌 API Specification & Error Handling
 
 ### 1. OpenAI-Compatible Chat Completions
 ```http
@@ -222,7 +239,7 @@ x-api-key: sk-valid-key
 ```http
 GET /api/metrics
 ```
-**Response Sample:**
+**Success Response (`200 OK`):**
 ```json
 {
   "active_connections": 14,
@@ -236,17 +253,51 @@ GET /api/metrics
 }
 ```
 
+### 4. Admission Control Error Handling & Rate Limits
+
+InferX enforces rate limiting and backpressure control loops. When threshold capacity is breached, the gateway returns standard HTTP error codes:
+
+#### Rate Limit Exceeded (`429 Too Many Requests`)
+Triggered by the Token-Bucket Rate Limiter when request frequency exceeds token refill capacity:
+```json
+{
+  "error": "Rate limit exceeded. Token bucket depleted.",
+  "code": "RATE_LIMIT_EXCEEDED"
+}
+```
+
+#### Circuit Breaker / Load Shedding (`503 Service Unavailable`)
+Triggered by the Backpressure Controller when node queue depth or hardware watermarks breach safety limits:
+```json
+{
+  "error": "Service unavailable. Circuit breaker open due to backpressure overload.",
+  "code": "CIRCUIT_BREAKER_OPEN"
+}
+```
+
+#### Authentication Error (`401 Unauthorized`)
+Triggered when an invalid or missing API key is supplied:
+```json
+{
+  "error": "Unauthorized. Invalid or missing API key.",
+  "code": "UNAUTHORIZED"
+}
+```
+
 ---
 
 ## 📊 Benchmarks & SLA Compliance
 
 | Metric / Parameter | Measured Value | SLA Target | Status |
 | :--- | :--- | :--- | :--- |
-| **Steady State Throughput** | 253.20 req/sec | $> 200$ req/sec | ✅ Passed |
-| **P50 Latency (Median)** | 14.95 ms | $< 25$ ms | ✅ Passed |
-| **P95 Latency** | 18.39 ms | $< 50$ ms | ✅ Passed |
+| **Steady State Throughput** <sup>[1]</sup> | 253.20 req/sec | $> 200$ req/sec | ✅ Passed |
+| **P50 Latency (Median)** <sup>[1]</sup> | 14.95 ms | $< 25$ ms | ✅ Passed |
+| **P95 Latency** <sup>[1]</sup> | 18.39 ms | $< 50$ ms | ✅ Passed |
 | **Cluster Failover Duration** | 106.32 ms | $< 150$ ms | ✅ Passed |
 | **Config Replication Latency** | 6.22 ms | $< 10$ ms | ✅ Passed |
+
+> [!NOTE]
+> **<sup>[1]</sup> Benchmark Footnote:** Throughput ($253.20\text{ req/sec}$) and latency metrics ($14.95\text{ ms}$ P50) were measured on a local cluster using **Zero-Copy Shared Memory IPC (`SharedMemoryPool`) and C++ / TensorRT GPU pinned memory runtimes**. External cloud WAN API execution (such as Google Gemini API over HTTPS) includes additional WAN network round-trip delays (typically $\sim 200\text{--}400\text{ ms}$).
 
 ---
 
