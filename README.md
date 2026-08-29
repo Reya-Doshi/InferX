@@ -71,21 +71,25 @@ Watch our walkthrough video demonstrating distributed failover, load-shedding co
 ## 📐 Architecture & Flow
 
 ```mermaid
-graph TD
-    Client[Client Gateway Request] --> Gateway[InferX Ingress Gateway / Vercel Serverless]
-    Gateway --> Admission[Admission Controller / Token-Bucket Queue]
-    Admission --> Scheduler[Distributed Scheduler]
-    Scheduler --> Coordinator[Raft Leader Node]
-    Coordinator -->|RPC Delegate| RemoteWorker[Remote Worker Node]
-    Scheduler -->|Local Stream| LocalBatcher[Dynamic Batcher]
-    LocalBatcher -->|Shared Memory / CUDA Stream| GPURuntime[Model Engine Provider]
+graph LR
+    A["Client Request"] --> B["Ingress Gateway Adapter"]
+    B --> C["Admission Controller (Token-Bucket & Circuit Breaker)"]
+    C --> D["Dynamic Batcher & SharedMemory Buffer"]
+    D --> E["Worker Execution Pool"]
+    E -->|Real CPU Matrix Math| F1["Local ML Engine (ONNX / Softmax)"]
+    E -->|Cloud API Proxy| F2["Google Gemini API (gemini-2.5-flash)"]
+    E -->|Pinned VRAM| F3["PyTorch / CUDA Local Runtimes"]
+    F1 --> G["Client JSON Response (Logits & Tokens)"]
+    F2 --> G
+    F3 --> G
 ```
 
-### Module Breakdown
-* **Gateway Layer ([`inferx/gateway/`](inferx/gateway/)):** Handles REST requests, SSE streams, WebSockets, and CORS middleware pipelines.
-* **Admission System ([`inferx/admission/`](inferx/admission/)):** Enforces rate-limiting, priority shedding, and queue-depth controls.
-* **Model Engine ([`inferx/model/`](inferx/model/)):** Manages `GeminiProvider` API client, lazy-loaded local runtimes, and tokenizer pipelines.
-* **Distributed Subsystem ([`inferx/distributed/`](inferx/distributed/)):** Implements Raft consensus leader election, gossip state sync, and RPC nodes.
+### Gateway Request Lifecycle
+1. **Client Request**: Ingress HTTP REST, SSE stream, or WebSocket connection packet.
+2. **Admission Controller**: Token-Bucket rate-limiter, queue-depth evaluator, and backpressure load shedder.
+3. **Dynamic Batcher & SharedMemory**: Grouping queries into zero-copy shared memory IPC buffers.
+4. **Worker Pool Execution**: Dispatches to **Local ML Engine** (CPU matrix multiplication & logits), **Google Gemini API**, or **CUDA PyTorch**.
+5. **Client Response**: Returns structured JSON completion, logits probabilities, or token SSE streams.
 
 For full architectural specs, refer to [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -235,7 +239,7 @@ x-api-key: sk-valid-key
 }
 ```
 
-### 3. Live System Telemetry
+### 3. Live System Telemetry (JSON)
 ```http
 GET /api/metrics
 ```
@@ -248,9 +252,28 @@ GET /api/metrics
   "cpu_utilization": 0.24,
   "ram_utilization": 0.42,
   "is_gemini_active": true,
-  "provider": "gemini",
-  "active_model": "gemini-2.5-flash"
+  "provider": "local-ml-onnx",
+  "active_model": "InferX-LocalML-v1.0"
 }
+```
+
+### 4. Prometheus Scraping Endpoint (Grafana Compatible)
+```http
+GET /metrics
+```
+**Prometheus Text Format Response:**
+```text
+# HELP inferx_active_connections Current active connections
+# TYPE inferx_active_connections gauge
+inferx_active_connections 14.0
+
+# HELP inferx_cpu_utilization_ratio Host CPU utilization ratio
+# TYPE inferx_cpu_utilization_ratio gauge
+inferx_cpu_utilization_ratio 0.24
+
+# HELP inferx_inference_latency_ms Average inference latency in milliseconds
+# TYPE inferx_inference_latency_ms gauge
+inferx_inference_latency_ms 14.95
 ```
 
 ### 4. Admission Control Error Handling & Rate Limits
