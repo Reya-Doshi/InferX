@@ -1,62 +1,74 @@
-# InferX
+# InferX ⚡
 
 <div align="center">
-  <p><strong>Production-grade, distributed AI inference engine designed for cloud-native orchestration of LLMs and deep learning workloads.</strong></p>
 
-  [![CI](https://github.com/Reya-Doshi/InferX/actions/workflows/ci.yml/badge.svg)](https://github.com/Reya-Doshi/InferX/actions/workflows/ci.yml)
-  [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-  [![Kubernetes](https://img.shields.io/badge/Kubernetes-Compatible-blue.svg)](deploy/kubernetes/)
+  **Production-grade, distributed AI inference engine designed for cloud-native orchestration of LLMs and deep learning workloads.**
+
+  [![CI Pipeline](https://github.com/Reya-Doshi/InferX/actions/workflows/ci.yml/badge.svg)](https://github.com/Reya-Doshi/InferX/actions/workflows/ci.yml)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+  [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
+  [![Kubernetes Compatible](https://img.shields.io/badge/Kubernetes-Ready-326ce5.svg?logo=kubernetes&logoColor=white)](deploy/kubernetes/)
+  [![Render Live](https://img.shields.io/badge/Render-Deployed-46E3B7.svg?logo=render&logoColor=white)](https://inferx-89z2.onrender.com/)
+  [![Vercel Serverless](https://img.shields.io/badge/Vercel-Serverless-000000.svg?logo=vercel&logoColor=white)](https://infer-x-livid.vercel.app/)
+
+  [🌐 Live Render Gateway](https://inferx-89z2.onrender.com/) • [⚡ Vercel Serverless Gateway](https://infer-x-livid.vercel.app/) • [📽️ Demo Video](InferX.mp4) • [📖 Architecture Docs](ARCHITECTURE.md)
+
 </div>
+
+---
+
+## 📌 Table of Contents
+- [Overview](#-overview)
+- [Demonstration](#-demonstration)
+- [Key Features](#-key-features)
+- [Architecture & Flow](#-architecture--flow)
+- [Tech Stack](#-tech-stack)
+- [Directory Structure](#-directory-structure)
+- [Quick Start & Installation](#-quick-start--installation)
+- [Deployments](#-deployments)
+  - [Render Cloud Deployment](#1-render-cloud-deployment)
+  - [Vercel Serverless Gateway](#2-vercel-serverless-gateway)
+  - [Docker & Kubernetes](#3-docker--kubernetes)
+- [API Specification](#-api-specification)
+- [Hardware Telemetry & Metrics](#-hardware-telemetry--metrics)
+- [Benchmarks & SLA Compliance](#-benchmarks--sla-compliance)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
+
+## 🚀 Overview
+
+**InferX** is an enterprise-ready, low-latency AI inference gateway and distributed orchestrator. Built with non-blocking `asyncio`, zero-copy shared memory IPC, token-bucket admission control, dynamic batching, and Raft consensus leader election, InferX seamlessly scales generative AI workloads across cloud platforms and edge clusters.
+
+Whether running on dedicated GPU clusters or serverless cloud environments (Render, Vercel), InferX features **automatic hardware detection** with **Google Gemini API** integration for real-time model completions and live system telemetry (`psutil` and `pynvml`).
 
 ---
 
 ## 📽️ Demonstration
 
-We have uploaded a detailed walkthrough video demonstrating the distributed failover, load-shedding control loops, and zero-copy shared memory performance tests in real-time.
+Watch our walkthrough video demonstrating distributed failover, load-shedding control loops, and zero-copy shared memory IPC performance in real-time.
 
-[![Watch Demonstration Video](https://img.shields.io/badge/Watch_Demo_Video-3b66f5?style=for-the-badge&logo=playstation)](https://github.com/Reya-Doshi/InferX/blob/main/InferX.mp4)
+[![Watch Demonstration Video](https://img.shields.io/badge/Watch_Demo_Video-3b66f5?style=for-the-badge&logo=playstation)](InferX.mp4)
 
-[▶ Click here to open and play the demonstration video](https://github.com/Reya-Doshi/InferX/blob/main/InferX.mp4)
-
----
-
-## 🛠️ Tech Stack & Architecture
-
-### Core Runtimes & Languages
-*   ![Python](https://img.shields.io/badge/Python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) - Advanced asynchronous standard library and parallel computation.
-*   ![Asyncio](https://img.shields.io/badge/Asyncio-3776AB?style=for-the-badge&logo=python&logoColor=white) - High-throughput, non-blocking I/O event loops.
-
-### Infrastructure & Deployment
-*   ![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white) - Orchestrated container scheduling and microservices topology.
-*   ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white) - Reproducible, multi-platform runtime environments.
-*   ![Helm](https://img.shields.io/badge/Helm-0F162D?style=for-the-badge&logo=helm&logoColor=white) - Kubernetes package manager for deployment templates.
-*   ![Render](https://img.shields.io/badge/Render-%2346E3B7.svg?style=for-the-badge&logo=render&logoColor=white) - Automatic blueprint builds and live web service hosting.
-*   ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white) - Serverless REST gateway for OpenAI-compatible completions.
-
-### Protocols & Data Layers
-*   ![JSON-RPC](https://img.shields.io/badge/JSON--RPC-404040?style=for-the-badge) - Secure, schema-validated inter-node RPC communications.
-*   ![YAML](https://img.shields.io/badge/YAML-%23ffffff.svg?style=for-the-badge&logo=yaml&logoColor=151515) - Standard configuration layouts with PyYAML loader.
-
-### Observability & Automated QA
-*   ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=Prometheus&logoColor=white) - Metric exporter for time-series throughput and latency tracking.
-*   ![Psutil](https://img.shields.io/badge/Psutil-4183C4?style=for-the-badge) - Real-time CPU and RAM system hardware telemetry.
-*   ![Pytest](https://img.shields.io/badge/Pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white) - Scalable testing framework with code coverage reports.
-*   ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white) - Automated CI pipelines verifying format, lint, and test suites.
+> [!TIP]
+> Click on [`InferX.mp4`](InferX.mp4) to open and play the walkthrough video directly.
 
 ---
 
 ## ⚡ Key Features
 
-*   **Live Generative AI Integration:** Powered by Google Gemini (`gemini-2.5-flash`) for real-time model completions across serverless and dedicated deployments.
-*   **Real-Time Hardware Telemetry:** Host CPU and RAM utilization tracking via `psutil`, plus NVIDIA GPU VRAM metrics via `pynvml` (with automatic simulated fallbacks on CPU-only containers).
-*   **Distributed Control Plane:** Fully distributed membership tracking with Gossip heartbeats, Raft-inspired consensus leader elections, and config metadata replication.
-*   **Dynamic Batching & Priority Scheduling:** Priority queues sorting and batching queries based on real-time hardware stream availability.
-*   **Cloud-Native Ingress Gateway:** Protocol-agnostic endpoint supporting REST HTTP/1.1, Server-Sent Events (SSE), WebSockets, and OpenAI-compatible `/v1/chat/completions`.
-*   **Kubernetes Ready:** Production Helm charts integrating custom queue-depth and GPU utilization autoscaling triggers.
+* 🧠 **Live Generative AI Integration:** Powered by Google Gemini (`gemini-2.5-flash`) for real-time model completions across serverless functions and dedicated gateways.
+* 📊 **Real-Time Hardware Telemetry:** Dynamic CPU & RAM utilization tracking via `psutil`, plus NVIDIA GPU VRAM metrics via `pynvml` (with automatic fallback on CPU-only containers).
+* 🛡️ **Advanced Admission Control:** Token-bucket rate limiting, backpressure load shedding, and circuit breakers preventing node overload.
+* ⚡ **Zero-Copy Shared Memory:** High-performance inter-process communication bypassing Python serialization bottlenecks via `SharedMemoryPool`.
+* 🔄 **Distributed Control Plane:** Membership tracking with Gossip heartbeats, Raft-inspired leader election, and distributed configuration state replication.
+* 🌐 **Multi-Protocol Gateway:** Ingress adapter supporting REST HTTP/1.1, Server-Sent Events (SSE) streaming, WebSockets, and OpenAI-compatible `/v1/chat/completions`.
+* ☸️ **Cloud-Native & Kubernetes Ready:** Helm charts, Docker container manifests, Render Blueprints, and Vercel serverless configurations included out-of-the-box.
 
 ---
 
-## 📐 Architecture Overview
+## 📐 Architecture & Flow
 
 ```mermaid
 graph TD
@@ -69,41 +81,84 @@ graph TD
     LocalBatcher -->|CUDA Stream / API| GPURuntime[Model Runtime Engine]
 ```
 
-### Deep Dive Modules
-*   **Gateway Layer:** Implements HTTP/1.1 REST endpoints, SSE stream formatting, and WebSocket connection handshakes.
-*   **Admission System:** Features backpressure controllers, load shedders, token-bucket rate limiters, and circuit breakers.
-*   **Zero-Copy Shared Memory:** Bypasses Python serialization bottlenecks using `SharedMemoryPool` for ultra-low latency IPC between processes.
+### Module Breakdown
+* **Gateway Layer ([`inferx/gateway/`](inferx/gateway/)):** Handles REST requests, SSE streams, WebSockets, and CORS middleware pipelines.
+* **Admission System ([`inferx/admission/`](inferx/admission/)):** Enforces rate-limiting, priority shedding, and queue-depth controls.
+* **Model Engine ([`inferx/model/`](inferx/model/)):** Manages `GeminiProvider` API client, lazy-loaded local runtimes, and tokenizer pipelines.
+* **Distributed Subsystem ([`inferx/distributed/`](inferx/distributed/)):** Implements Raft consensus leader election, gossip state sync, and RPC nodes.
 
-For a detailed review of internal modules, see [ARCHITECTURE.md](ARCHITECTURE.md).
+For full architectural specs, refer to [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
-## 🚀 Quick Start
+## 🛠️ Tech Stack
 
-### Installation
-Clone the repository and install the production dependencies:
+| Domain | Tools & Runtimes |
+| :--- | :--- |
+| **Languages & Core** | Python 3.10+, `asyncio`, PyYAML, Pydantic |
+| **AI Runtimes** | `google-genai` (Gemini 2.5 Flash), PyTorch / CUDA (Optional) |
+| **Telemetry & Observability** | `psutil`, `pynvml` (NVIDIA NVML), Prometheus Exporters |
+| **Gateway Protocols** | HTTP/1.1 REST, Server-Sent Events (SSE), WebSockets (RFC 6455) |
+| **Infrastructure & Hosting** | Kubernetes, Helm, Docker, Render, Vercel Serverless |
+| **CI / Quality Assurance** | GitHub Actions, Pytest, Pre-Commit |
+
+---
+
+## 📂 Directory Structure
+
+```
+InferX/
+├── api/
+│   └── index.py                 # Vercel Serverless WSGI Function
+├── config/
+│   └── default.yaml             # Core engine settings & ports
+├── deploy/
+│   ├── kubernetes/              # K8s Helm charts & manifests
+│   └── render/
+│       └── start_gateway.py     # Render entry point script
+├── docs/                        # Specifications & architecture docs
+├── examples/                    # Usage scripts (single_node, streaming, multi_node)
+├── inferx/                      # Core InferX Python Package
+│   ├── admission/               # Limiter, shedder, & backpressure
+│   ├── batcher/                 # Dynamic batching & padding
+│   ├── core/                    # Bootstrap, health, & config
+│   ├── distributed/             # Consensus, election, & RPC
+│   ├── gateway/                 # Protocols, middleware, & router
+│   ├── interfaces/              # Standard interface definitions
+│   └── model/                   # Model loader & Gemini provider
+├── performance_report.html       # Automated benchmark output
+├── render.yaml                  # Render Blueprint configuration
+├── vercel.json                  # Vercel Serverless configuration
+└── requirements.txt             # Production Python dependencies
+```
+
+---
+
+## 🚀 Quick Start & Installation
+
+### 1. Clone & Install Dependencies
 ```bash
 git clone https://github.com/Reya-Doshi/InferX.git
 cd InferX
 pip install -r requirements.txt
 ```
 
-### Live AI Environment Configuration
-To enable live AI inference responses instead of mock data, set your Google Gemini API key:
-```bash
-# In your .env file or environment
+### 2. Configure Live AI Environment
+Create a `.env` file in the project root:
+```env
 GEMINI_API_KEY=your_google_gemini_api_key_here
+PORT=10000
+LOG_LEVEL=INFO
 ```
 
-### Run a Single Node Instance
-Start a gateway instance locally:
+### 3. Run Locally
+Start a single-node gateway instance:
 ```python
 import asyncio
 from inferx.core.bootstrap import bootstrap_node
 
 async def main():
     print("Initializing InferX Node...")
-    # Launches gateway REST/WebSocket endpoints and active model runtimes
     await bootstrap_node(port=10000)
 
 if __name__ == "__main__":
@@ -112,17 +167,105 @@ if __name__ == "__main__":
 
 ---
 
+## ☁️ Deployments
+
+### 1. Render Cloud Deployment
+Deploy directly to Render using the included [`render.yaml`](render.yaml) Blueprint:
+- Entry point: `deploy/render/start_gateway.py`
+- Set `GEMINI_API_KEY` in your Render Environment Variables for live AI completions.
+
+### 2. Vercel Serverless Gateway
+Deploy as a high-speed Serverless Function on Vercel using [`vercel.json`](vercel.json):
+- Entry point: `api/index.py`
+- Open your Vercel Dashboard $\rightarrow$ **Settings** $\rightarrow$ **Environment Variables** and add `GEMINI_API_KEY`.
+
+### 3. Docker & Kubernetes
+Build and launch containerized clusters:
+```bash
+# Docker Build & Run
+docker build -t inferx:latest .
+docker run -p 10000:10000 -e GEMINI_API_KEY=your_key inferx:latest
+
+# Kubernetes Helm Deployment
+helm install inferx deploy/kubernetes/
+```
+
+---
+
+## 🔌 API Specification
+
+### 1. OpenAI-Compatible Chat Completions
+```http
+POST /v1/chat/completions
+Content-Type: application/json
+
+{
+  "model": "gemini-2.5-flash",
+  "messages": [
+    { "role": "user", "content": "Explain quantum computing in simple terms." }
+  ]
+}
+```
+
+### 2. Direct Prediction Endpoint
+```http
+POST /predict
+Content-Type: application/json
+x-api-key: sk-valid-key
+
+{
+  "prompt": "What are the core components of distributed consensus?"
+}
+```
+
+### 3. Live System Telemetry
+```http
+GET /api/metrics
+```
+**Response Sample:**
+```json
+{
+  "active_connections": 14,
+  "requests_throughput_sec": 162.40,
+  "avg_inference_latency_ms": 15.20,
+  "cpu_utilization": 0.24,
+  "ram_utilization": 0.42,
+  "is_gemini_active": true,
+  "provider": "gemini",
+  "active_model": "gemini-2.5-flash"
+}
+```
+
+---
+
 ## 📊 Benchmarks & SLA Compliance
 
-| Metric / Parameter | Measured Value | SLA Target Status |
-| --- | --- | --- |
-| **Steady State Throughput** | 253.20 req/sec | ✅ Meets target |
-| **P50 Latency (Median)** | 14.95 ms | ✅ Meets target |
-| **P95 Latency** | 18.39 ms | ✅ Meets target (SLA limit: < 50ms) |
-| **Cluster Failover Duration** | 106.32 ms | ✅ Meets target (SLA limit: < 150ms) |
-| **Config Replication Latency** | 6.22 ms | ✅ Meets target |
+| Metric / Parameter | Measured Value | SLA Target | Status |
+| :--- | :--- | :--- | :--- |
+| **Steady State Throughput** | 253.20 req/sec | $> 200$ req/sec | ✅ Passed |
+| **P50 Latency (Median)** | 14.95 ms | $< 25$ ms | ✅ Passed |
+| **P95 Latency** | 18.39 ms | $< 50$ ms | ✅ Passed |
+| **Cluster Failover Duration** | 106.32 ms | $< 150$ ms | ✅ Passed |
+| **Config Replication Latency** | 6.22 ms | $< 10$ ms | ✅ Passed |
+
+---
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/Reya-Doshi/InferX/issues).
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
 ## 📜 License
-InferX is open source software licensed under the [Apache License 2.0](LICENSE).
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+<div align="center">
+  <sub>Built with ❤️ by <a href="https://github.com/Reya-Doshi">Reya Doshi</a></sub>
+</div>
