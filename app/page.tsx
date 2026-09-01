@@ -20,9 +20,9 @@ interface EngineMetrics {
 }
 
 export default function InferXDashboard() {
-  // 1. Persistent React States for Telemetry Tracking
+  // 1. Persistent React Telemetry States
   const [activeConnections, setActiveConnections] = useState<number>(0);
-  const [latencies, setLatencies] = useState<number[]>([]);
+  const [avgLatency, setAvgLatency] = useState<string>("0.0");
   const [activeThroughput, setActiveThroughput] = useState<number>(0.0);
   const [gpuLoad, setGpuLoad] = useState<number>(0);
   const [logs, setLogs] = useState<EngineLog[]>([]);
@@ -37,12 +37,7 @@ export default function InferXDashboard() {
   const logListRef = useRef<HTMLDivElement>(null);
   const throughputTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 3. Compute Display Average Latency (Retains moving average of completed runs across idle states)
-  const avgLatencyValue = latencies.length
-    ? (latencies.reduce((a, b) => a + b, 0) / latencies.length).toFixed(1)
-    : "0.0";
-
-  // Bind SSE Stream Directly for Logs & Background Sync
+  // Bind SSE Stream Directly for Logs & Engine State Sync (Never overwrites avgLatency)
   useEffect(() => {
     const eventSource = new EventSource("/api/telemetry");
 
@@ -82,7 +77,7 @@ export default function InferXDashboard() {
     }
   }, [logs]);
 
-  // 2. Handle "Execute Inference Request" Lifecycle
+  // 2. Handle "Execute Inference Request" Lifecycle & Real Execution Latency Recording
   const handleExecuteInference = async () => {
     if (!prompt.trim()) {
       alert("Please enter a query prompt.");
@@ -92,7 +87,7 @@ export default function InferXDashboard() {
     setIsExecuting(true);
     setOutput("// Processing real-time inference request via /api/inference...");
 
-    // Record start state
+    // Record start state & timing
     const startTime = performance.now();
     setActiveConnections((prev) => prev + 1);
     setActiveThroughput(1.0);
@@ -115,14 +110,15 @@ export default function InferXDashboard() {
       const data = await res.json();
       setOutput(JSON.stringify(data, null, 2));
 
-      // Extract numeric latency value (prefer data.latency_ms or fallback to performance duration)
-      const numericLatency = data.latency_ms ?? (performance.now() - startTime);
+      // Calculate real numeric execution latency (ms)
+      const measuredMs = performance.now() - startTime;
+      const numericValue = typeof data.latency_ms === "number" ? data.latency_ms : measuredMs;
 
-      // Append numeric latency to latencies state array (retain last 10 entries)
-      setLatencies((prev) => [...prev.slice(-9), numericLatency]);
+      // Update avgLatency state directly with actual recorded duration (e.g. 9937.4 ms or 0.1 ms)
+      setAvgLatency(Number(numericValue).toFixed(1));
     } catch (err: any) {
-      const errorLatency = performance.now() - startTime;
-      setLatencies((prev) => [...prev.slice(-9), errorLatency]);
+      const errorMs = performance.now() - startTime;
+      setAvgLatency(errorMs.toFixed(1));
       setOutput(`// Execution Failure:\n${err?.message || "Connection failed"}`);
     } finally {
       // Decrement active connections
@@ -185,11 +181,11 @@ export default function InferXDashboard() {
               <div style={{ fontSize: "0.75rem", color: "#10b981", marginTop: "0.5rem" }}>Live Request Activity</div>
             </div>
 
-            {/* 4. Average Latency (ms) - Binds directly to avgLatencyValue */}
+            {/* Average Latency (ms) - Renders {avgLatency} directly */}
             <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(79,172,254,0.15)", borderRadius: "12px", padding: "1.25rem" }}>
               <div style={{ fontSize: "0.8rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600 }}>Avg Latency</div>
               <div style={{ fontSize: "1.8rem", fontWeight: 700, marginTop: "0.4rem" }}>
-                {avgLatencyValue} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>ms</span>
+                {avgLatency} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>ms</span>
               </div>
               <div style={{ fontSize: "0.75rem", color: "#4facfe", marginTop: "0.5rem" }}>Moving Average (Completed Runs)</div>
             </div>
@@ -255,7 +251,7 @@ export default function InferXDashboard() {
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {/* Gossip Cluster Logs Card */}
           <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "1.25rem", display: "flex", flexDirection: "column" }}>
-            <h3 style={{ fontSize: "1rem", fontWeight 700, marginBottom: "0.75rem", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "0.5rem" }}>
+            <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.75rem", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "0.5rem" }}>
               Gossip Cluster Logs (Pure SSE)
             </h3>
             <div ref={logListRef} style={{ background: "rgba(6,9,19,0.9)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "6px", padding: "0.75rem", fontFamily: "monospace", fontSize: "0.78rem", overflowY: "auto", height: "360px", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
