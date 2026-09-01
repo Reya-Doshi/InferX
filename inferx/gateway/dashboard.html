@@ -629,17 +629,6 @@
             areaEl.setAttribute('d', dArea);
         }
 
-        // Add dummy cluster log entries
-        const mockComponents = ['gateway', 'supervisor', 'admission', 'scheduler', 'event_bus', 'rpc_server', 'model_runtime'];
-        const mockMessages = [
-            { level: 'info', text: 'Telemetry metrics push emitted successfully.' },
-            { level: 'info', text: 'Worker thread allocations refreshed on CUDA Stream 0.' },
-            { level: 'info', text: 'Gossip heartbeat packet dispatched to node-2.' },
-            { level: 'info', text: 'Admission Controller evaluated queue depth capacity bounds.' },
-            { level: 'warn', text: 'VRAM utilization approaching watermark limit.' },
-            { level: 'info', text: 'Canary route traffic weights parsed.' }
-        ];
-
         function addLogEntry(level, component, text) {
             const timeStr = new Date().toLocaleTimeString();
             const entry = document.createElement('div');
@@ -755,14 +744,7 @@
             }
         }
 
-        // Periodic simulation loops
         setInterval(fetchMetrics, 1200);
-
-        setInterval(() => {
-            const comp = mockComponents[Math.floor(Math.random() * mockComponents.length)];
-            const msg = mockMessages[Math.floor(Math.random() * mockMessages.length)];
-            addLogEntry(msg.level, comp, msg.text);
-        }, 3500);
 
         // Update Uptime clock
         setInterval(() => {

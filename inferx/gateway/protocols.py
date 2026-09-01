@@ -336,45 +336,26 @@ class RestAdapter(IProtocolAdapter):
             real_ram = None
 
         if not self.telemetry_manager:
-            import random
 
-            cpu_val = (
-                real_cpu
-                if real_cpu is not None and real_cpu > 0
-                else round(random.uniform(0.18, 0.42), 2)
-            )
+            cpu_val = real_cpu if real_cpu is not None else 0.0
+            ram_val = real_ram if real_ram is not None else 0.0
             data = {
-                "active_connections": random.randint(12, 28),
-                "requests_throughput_sec": round(random.uniform(140.0, 185.0), 2),
-                "avg_inference_latency_ms": round(random.uniform(12.4, 18.2), 2),
-                "queue_depth": random.randint(2, 8),
+                "active_connections": 0,
+                "requests_throughput_sec": 0.0,
+                "avg_inference_latency_ms": 0.0,
+                "queue_depth": 0,
                 "worker_utilization": cpu_val,
                 "cpu_utilization": cpu_val,
-                "ram_utilization": (
-                    real_ram
-                    if real_ram is not None
-                    else round(random.uniform(0.30, 0.55), 2)
-                ),
+                "ram_utilization": ram_val,
                 "alerts_active": 0,
             }
         else:
             data = self.telemetry_manager.get_dashboard_data()
-            import random
-
-            if data.get("active_connections", 0) == 0:
-                data["active_connections"] = random.randint(12, 28)
-            if data.get("requests_throughput_sec", 0) == 0:
-                data["requests_throughput_sec"] = round(random.uniform(140.0, 185.0), 2)
-            if data.get("avg_inference_latency_ms", 0) == 0:
-                data["avg_inference_latency_ms"] = round(random.uniform(12.4, 18.2), 2)
-            if data.get("queue_depth", 0) == 0:
-                data["queue_depth"] = random.randint(2, 8)
-            if data.get("worker_utilization", 0) == 0:
-                data["worker_utilization"] = (
-                    real_cpu
-                    if real_cpu is not None and real_cpu > 0
-                    else round(random.uniform(0.18, 0.42), 2)
-                )
+            if real_cpu is not None:
+                data["cpu_utilization"] = real_cpu
+                data["worker_utilization"] = real_cpu
+            if real_ram is not None:
+                data["ram_utilization"] = real_ram
             if real_cpu is not None:
                 data["cpu_utilization"] = real_cpu
             if real_ram is not None:

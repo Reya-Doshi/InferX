@@ -2,8 +2,8 @@
 import asyncio
 import json
 import os
-import random
-from typing import Any, Dict
+from typing import Any
+
 from dotenv import load_dotenv
 
 from inferx.model.interfaces import ModelMetadata
@@ -12,7 +12,7 @@ from inferx.model.loader import LocalMLEngineProvider
 load_dotenv()
 
 
-def app(environ: Dict[str, Any], start_response: Any) -> Any:
+def app(environ: dict[str, Any], start_response: Any) -> Any:
     """WSGI handler for Vercel Serverless Function deployment."""
     path = environ.get("PATH_INFO", "/")
     method = environ.get("REQUEST_METHOD", "GET")
@@ -21,9 +21,11 @@ def app(environ: Dict[str, Any], start_response: Any) -> Any:
     if method == "GET" and path in ["/", "/dashboard", "/index.html"]:
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            dashboard_path = os.path.join(current_dir, "..", "inferx", "gateway", "dashboard.html")
+            dashboard_path = os.path.join(
+                current_dir, "..", "inferx", "gateway", "dashboard.html"
+            )
             if os.path.exists(dashboard_path):
-                with open(dashboard_path, "r", encoding="utf-8") as f:
+                with open(dashboard_path, encoding="utf-8") as f:
                     content = f.read()
             else:
                 content = "<h1>InferX Serverless Gateway</h1><p>Use POST /v1/chat/completions or POST /predict to execute prompts.</p>"
@@ -44,21 +46,22 @@ def app(environ: Dict[str, Any], start_response: Any) -> Any:
     if method == "GET" and path == "/api/metrics":
         try:
             import psutil
+
             real_cpu = round(psutil.cpu_percent(interval=None) / 100.0, 2)
             real_ram = round(psutil.virtual_memory().percent / 100.0, 2)
         except Exception:
-            real_cpu = round(random.uniform(0.18, 0.42), 2)
-            real_ram = round(random.uniform(0.30, 0.55), 2)
+            real_cpu = 0.0
+            real_ram = 0.0
 
         api_key = os.getenv("GEMINI_API_KEY")
         is_gemini = bool(api_key)
 
         metrics_body = {
-            "active_connections": random.randint(12, 28),
-            "requests_throughput_sec": round(random.uniform(140.0, 185.0), 2),
-            "avg_inference_latency_ms": round(random.uniform(12.4, 18.2), 2),
-            "queue_depth": random.randint(2, 8),
-            "worker_utilization": real_cpu if real_cpu > 0 else round(random.uniform(0.18, 0.42), 2),
+            "active_connections": 0,
+            "requests_throughput_sec": 0.0,
+            "avg_inference_latency_ms": 0.0,
+            "queue_depth": 0,
+            "worker_utilization": real_cpu,
             "cpu_utilization": real_cpu,
             "ram_utilization": real_ram,
             "alerts_active": 0,
@@ -80,6 +83,7 @@ def app(environ: Dict[str, Any], start_response: Any) -> Any:
     if method == "GET" and path in ["/metrics", "/prometheus/metrics"]:
         try:
             import psutil
+
             real_cpu = round(psutil.cpu_percent(interval=None) / 100.0, 2)
             real_ram = round(psutil.virtual_memory().percent / 100.0, 2)
         except Exception:
@@ -170,7 +174,12 @@ def app(environ: Dict[str, Any], start_response: Any) -> Any:
         elif prompt:
             # Execute 100% Real Local Machine Learning Inference (Zero External API Dependency)
             tokens = [ord(c) for c in prompt]
-            meta = ModelMetadata(model_name="LocalML", version="1.0", framework="onnx", backend_type="cpu")
+            meta = ModelMetadata(
+                model_name="LocalML",
+                version="1.0",
+                framework="onnx",
+                backend_type="cpu",
+            )
             engine = LocalMLEngineProvider(meta)
             out_tokens = asyncio.run(engine.predict(tokens))
             out_json_str = "".join(chr(t) for t in out_tokens)
@@ -185,7 +194,9 @@ def app(environ: Dict[str, Any], start_response: Any) -> Any:
         response_body = {
             "id": "chatcmpl-vercel",
             "object": "chat.completion",
-            "model": "gemini-2.5-flash" if provider == "gemini" else "InferX-LocalML-v1.0",
+            "model": (
+                "gemini-2.5-flash" if provider == "gemini" else "InferX-LocalML-v1.0"
+            ),
             "provider": provider,
             "choices": [
                 {
