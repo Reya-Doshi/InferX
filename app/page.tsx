@@ -20,7 +20,7 @@ interface EngineMetrics {
 }
 
 export default function InferXDashboard() {
-  // 1. Pure Zero-State Defaults
+  // Pure Zero-State Defaults
   const [activeThroughput, setActiveThroughput] = useState<number>(0.0);
   const [avgLatency, setAvgLatency] = useState<number>(0.0);
   const [concurrency, setConcurrency] = useState<number>(0);
@@ -37,7 +37,7 @@ export default function InferXDashboard() {
 
   const logListRef = useRef<HTMLDivElement>(null);
 
-  // 2. Bind SSE Stream Directly to State (Zero Mock Generators)
+  // Bind SSE Stream Directly to State (Exact JSON Key Matching)
   useEffect(() => {
     const eventSource = new EventSource("/api/telemetry");
 
@@ -61,7 +61,7 @@ export default function InferXDashboard() {
       console.warn("Telemetry SSE stream connection error:", err);
     };
 
-    // Simple Uptime clock tick
+    // Uptime clock tick
     const uptimeTimer = setInterval(() => {
       setUptimeSeconds((prev) => prev + 1);
     }, 1000);
@@ -79,7 +79,7 @@ export default function InferXDashboard() {
     }
   }, [logs]);
 
-  // 3. Keep Playground Fully Functional
+  // Execute Playground Inference Request
   const handleExecuteInference = async () => {
     if (!prompt.trim()) {
       alert("Please enter a query prompt.");
@@ -150,13 +150,13 @@ export default function InferXDashboard() {
               <div style={{ fontSize: "0.75rem", color: "#10b981", marginTop: "0.5rem" }}>Live 5s Window</div>
             </div>
 
-            {/* Average Latency (ms) */}
+            {/* Average Latency (ms) - Preserves rolling average of completed requests */}
             <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(79,172,254,0.15)", borderRadius: "12px", padding: "1.25rem" }}>
               <div style={{ fontSize: "0.8rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600 }}>Avg Latency</div>
               <div style={{ fontSize: "1.8rem", fontWeight: 700, marginTop: "0.4rem" }}>
                 {avgLatency.toFixed(1)} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>ms</span>
               </div>
-              <div style={{ fontSize: "0.75rem", color: "#4facfe", marginTop: "0.5rem" }}>Execution Moving Avg</div>
+              <div style={{ fontSize: "0.75rem", color: "#4facfe", marginTop: "0.5rem" }}>Execution Rolling Avg</div>
             </div>
 
             {/* Engine Load (%) */}
@@ -216,13 +216,13 @@ export default function InferXDashboard() {
           </div>
         </div>
 
-        {/* Right Column: Gossip Cluster Logs */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "1.25rem", height: "100%", display: "flex", flexDirection: "column" }}>
+        {/* Right Column: Gossip Cluster Logs & Explanatory Note Box */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "1.25rem", flex: 1, display: "flex", flexDirection: "column" }}>
             <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.75rem", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "0.5rem" }}>
               Gossip Cluster Logs (Pure SSE)
             </h3>
-            <div ref={logListRef} style={{ flex: 1, background: "rgba(6,9,19,0.9)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "6px", padding: "0.75rem", fontFamily: "monospace", fontSize: "0.78rem", overflowY: "auto", maxHeight: "540px", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+            <div ref={logListRef} style={{ flex: 1, background: "rgba(6,9,19,0.9)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "6px", padding: "0.75rem", fontFamily: "monospace", fontSize: "0.78rem", overflowY: "auto", maxHeight: "460px", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
               {logs.length === 0 ? (
                 <div style={{ color: "#6b7280", textAlign: "center", paddingTop: "2rem" }}>Waiting for real-time telemetry events...</div>
               ) : (
@@ -237,6 +237,14 @@ export default function InferXDashboard() {
                 ))
               )}
             </div>
+          </div>
+
+          {/* Explanatory Telemetry Note Box */}
+          <div style={{ marginTop: "0.75rem", padding: "0.85rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(6, 9, 19, 0.6)", fontSize: "0.75rem", color: "#9ca3af", fontFamily: "monospace", lineHeight: 1.45 }}>
+            <span style={{ color: "#00f2fe", backgroundColor: "rgba(0, 242, 254, 0.1)", border: "1px solid rgba(0, 242, 254, 0.3)", padding: "0.15rem 0.4rem", borderRadius: "4px", fontSize: "0.65rem", fontWeight: 700, marginRight: "0.5rem", display: "inline-block", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              LIVE TELEMETRY NOTE
+            </span>
+            Metrics reflect live runtime status. Throughput, average latency, and active concurrency remain at 0.0 during idle periods and update dynamically upon executing inference requests in the playground.
           </div>
         </div>
       </main>
