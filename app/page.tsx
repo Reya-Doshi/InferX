@@ -250,11 +250,12 @@ export default function InferXDashboard() {
 
         {/* Right Column: Gossip Cluster Logs & Explanatory Status Note */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "1.25rem", flex: 1, display: "flex", flexDirection: "column" }}>
+          {/* Gossip Cluster Logs Card */}
+          <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "1.25rem", display: "flex", flexDirection: "column" }}>
             <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.75rem", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "0.5rem" }}>
               Gossip Cluster Logs (Pure SSE)
             </h3>
-            <div ref={logListRef} style={{ flex: 1, background: "rgba(6,9,19,0.9)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "6px", padding: "0.75rem", fontFamily: "monospace", fontSize: "0.78rem", overflowY: "auto", maxHeight: "460px", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+            <div ref={logListRef} style={{ background: "rgba(6,9,19,0.9)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "6px", padding: "0.75rem", fontFamily: "monospace", fontSize: "0.78rem", overflowY: "auto", height: "360px", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
               {logs.length === 0 ? (
                 <div style={{ color: "#6b7280", textAlign: "center", paddingTop: "2rem" }}>Waiting for real-time telemetry events...</div>
               ) : (
@@ -271,14 +272,16 @@ export default function InferXDashboard() {
             </div>
           </div>
 
-          {/* 4. Explanatory Runtime Telemetry Note Card */}
-          <div style={{ marginTop: "0.75rem", padding: "0.875rem", borderRadius: "0.75rem", border: "1px solid rgba(39, 39, 42, 0.8)", backgroundColor: "rgba(9, 9, 11, 0.7)", fontFamily: "monospace", fontSize: "0.75rem", color: "#a1a1aa", lineHeight: 1.45 }}>
-            <div style={{ marginBottom: "0.4rem" }}>
-              <span style={{ color: "#22d3ee", backgroundColor: "rgba(8, 51, 68, 0.6)", border: "1px solid rgba(21, 94, 117, 0.5)", padding: "0.15rem 0.5rem", borderRadius: "4px", fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", display: "inline-block" }}>
+          {/* 4. Explanatory RUNTIME TELEMETRY NOTE Card */}
+          <div className="mt-3 p-3.5 rounded-xl border border-zinc-800/80 bg-zinc-950/70 font-mono text-xs text-zinc-400 space-y-1.5" style={{ marginTop: "0.75rem", padding: "0.875rem", borderRadius: "0.75rem", border: "1px solid rgba(39, 39, 42, 0.8)", backgroundColor: "rgba(9, 9, 11, 0.7)", fontFamily: "monospace", fontSize: "0.75rem", color: "#a1a1aa", lineHeight: 1.45 }}>
+            <div style={{ marginBottom: "0.35rem" }}>
+              <span className="text-cyan-400 bg-cyan-950/60 border border-cyan-800/50 px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase inline-block" style={{ color: "#22d3ee", backgroundColor: "rgba(8, 51, 68, 0.6)", border: "1px solid rgba(21, 94, 117, 0.5)", padding: "0.15rem 0.5rem", borderRadius: "4px", fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", display: "inline-block" }}>
                 RUNTIME TELEMETRY NOTE
               </span>
             </div>
-            Metrics reflect live runtime status. Throughput, GPU load, and concurrency sit at 0 during idle states and update dynamically upon executing requests. Average latency retains the moving average of completed inference runs.
+            <div>
+              Metrics reflect live runtime status. Throughput, GPU load, and concurrency sit at 0 during idle states and update dynamically upon executing requests. Average latency retains the moving average of completed inference runs.
+            </div>
           </div>
         </div>
       </main>

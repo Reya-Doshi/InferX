@@ -582,6 +582,18 @@
                     <!-- Log entries append here -->
                 </div>
             </div>
+
+            <!-- RUNTIME TELEMETRY NOTE -->
+            <div style="margin-top: 0.75rem; padding: 0.875rem; border-radius: 0.75rem; border: 1px solid rgba(39, 39, 42, 0.8); background-color: rgba(9, 9, 11, 0.7); font-family: monospace; font-size: 0.75rem; color: #a1a1aa; line-height: 1.45;">
+                <div style="margin-bottom: 0.35rem;">
+                    <span style="color: #22d3ee; background-color: rgba(8, 51, 68, 0.6); border: 1px solid rgba(21, 94, 117, 0.5); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; display: inline-block;">
+                        RUNTIME TELEMETRY NOTE
+                    </span>
+                </div>
+                <div>
+                    Metrics reflect live runtime status. Throughput, GPU load, and concurrency sit at 0 during idle states and update dynamically upon executing requests. Average latency retains the moving average of completed inference runs.
+                </div>
+            </div>
         </div>
     </main>
 
