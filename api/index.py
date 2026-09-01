@@ -11,6 +11,8 @@ from inferx.model.loader import LocalMLEngineProvider
 
 load_dotenv()
 
+SERVERLESS_COMPLETED_LATENCIES: list[float] = []
+
 
 def app(environ: dict[str, Any], start_response: Any) -> Any:
     """WSGI handler for Vercel Serverless Function deployment."""
@@ -56,10 +58,20 @@ def app(environ: dict[str, Any], start_response: Any) -> Any:
         api_key = os.getenv("GEMINI_API_KEY")
         is_gemini = bool(api_key)
 
+        avg_lat = (
+            round(
+                sum(SERVERLESS_COMPLETED_LATENCIES)
+                / len(SERVERLESS_COMPLETED_LATENCIES),
+                2,
+            )
+            if SERVERLESS_COMPLETED_LATENCIES
+            else 0.0
+        )
+
         metrics_body = {
             "active_connections": 0,
             "requests_throughput_sec": 0.0,
-            "avg_inference_latency_ms": 0.0,
+            "avg_inference_latency_ms": avg_lat,
             "queue_depth": 0,
             "worker_utilization": real_cpu,
             "cpu_utilization": real_cpu,
@@ -123,6 +135,10 @@ def app(environ: dict[str, Any], start_response: Any) -> Any:
         response_body = {"status": "healthy", "service": "inferx-serverless"}
         status = "200 OK"
     elif (path in ["/v1/chat/completions", "/predict"]) and method == "POST":
+        import time
+
+        req_start = time.perf_counter()
+
         # Read request body from WSGI stream
         try:
             request_body_size = int(environ.get("CONTENT_LENGTH", 0))
@@ -190,6 +206,11 @@ def app(environ: dict[str, Any], start_response: Any) -> Any:
             provider = "local-ml-onnx"
         else:
             content_payload = "No prompt found in request body. Please send a 'prompt' field or OpenAI 'messages' array."
+
+        dur_ms = (time.perf_counter() - req_start) * 1000.0
+        SERVERLESS_COMPLETED_LATENCIES.append(dur_ms)
+        if len(SERVERLESS_COMPLETED_LATENCIES) > 50:
+            SERVERLESS_COMPLETED_LATENCIES.pop(0)
 
         response_body = {
             "id": "chatcmpl-vercel",

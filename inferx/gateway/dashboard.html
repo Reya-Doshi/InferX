@@ -601,6 +601,7 @@
         // Store historical data for charts
         const throughputHistory = Array(15).fill(0);
         const latencyHistory = Array(15).fill(0);
+        const clientLatencies = [];
         const startTime = Date.now();
 
         // DOM elements
@@ -705,7 +706,14 @@
                     
                     // Update numerical values
                     throughputVal.textContent = data.requests_throughput_sec.toFixed(1);
-                    latencyVal.textContent = data.avg_inference_latency_ms.toFixed(1);
+                    if (data.avg_inference_latency_ms > 0) {
+                        latencyVal.textContent = data.avg_inference_latency_ms.toFixed(1);
+                    } else if (clientLatencies.length > 0) {
+                        const avgClient = clientLatencies.reduce((a, b) => a + b, 0) / clientLatencies.length;
+                        latencyVal.textContent = avgClient.toFixed(1);
+                    } else {
+                        latencyVal.textContent = "0.0";
+                    }
                     utilizationVal.textContent = Math.round(data.worker_utilization * 100) + '%';
                     queueVal.textContent = data.queue_depth;
                     connectionsLabel.textContent = `Active Connections: ${data.active_connections}`;
@@ -821,12 +829,15 @@
                 }
 
                 const data = await response.json();
-                const latency = (performance.now() - requestStart).toFixed(2);
+                const latencyNum = performance.now() - requestStart;
+                clientLatencies.push(latencyNum);
+                const avgClient = clientLatencies.reduce((a, b) => a + b, 0) / clientLatencies.length;
+                latencyVal.textContent = avgClient.toFixed(1);
                 
                 outputBox.style.color = '#00ff66'; // Green success output
                 outputBox.textContent = JSON.stringify(data, null, 4);
 
-                addLogEntry('info', 'model_runtime', `E2E Prediction resolved. Model: ${model} | Latency: ${latency}ms`);
+                addLogEntry('info', 'model_runtime', `E2E Prediction resolved. Model: ${model} | Latency: ${latencyNum.toFixed(2)}ms`);
             } catch (err) {
                 outputBox.style.color = '#ef4444';
                 outputBox.textContent = `// Execution Failure:\n${err.message}`;
