@@ -20,48 +20,48 @@ interface EngineMetrics {
 }
 
 export default function InferXDashboard() {
-  const [metrics, setMetrics] = useState<EngineMetrics>({
-    activeRequests: 0,
-    requestsThroughputSec: 0.0,
-    avgInferenceLatencyMs: 0.0,
-    queueDepth: 0,
-    workerUtilization: 0.0,
-    recentLogs: [],
-  });
+  // 1. Pure Zero-State Defaults
+  const [activeThroughput, setActiveThroughput] = useState<number>(0.0);
+  const [avgLatency, setAvgLatency] = useState<number>(0.0);
+  const [concurrency, setConcurrency] = useState<number>(0);
+  const [activeConnections, setActiveConnections] = useState<number>(0);
+  const [gpuLoad, setGpuLoad] = useState<number>(0);
+  const [logs, setLogs] = useState<EngineLog[]>([]);
 
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState("local-ml");
   const [apiKey, setApiKey] = useState("sk-valid-key");
   const [output, setOutput] = useState("// Real-time execution results will project here...");
   const [isExecuting, setIsExecuting] = useState(false);
-  const [throughputHistory, setThroughputHistory] = useState<number[]>(Array(15).fill(0));
-  const [latencyHistory, setLatencyHistory] = useState<number[]>(Array(15).fill(0));
   const [uptimeSeconds, setUptimeSeconds] = useState(0);
 
   const logListRef = useRef<HTMLDivElement>(null);
 
-  // 1. Initialize Server-Sent Events (SSE) Telemetry Stream
+  // 2. Bind SSE Stream Directly to State (Zero Mock Generators)
   useEffect(() => {
     const eventSource = new EventSource("/api/telemetry");
 
     eventSource.onmessage = (event) => {
       try {
         const data: EngineMetrics = JSON.parse(event.data);
-        setMetrics(data);
 
-        // Update sparkline histories
-        setThroughputHistory((prev) => [...prev.slice(1), data.requestsThroughputSec]);
-        setLatencyHistory((prev) => [...prev.slice(1), data.avgInferenceLatencyMs]);
+        // Bind incoming SSE properties directly to React hooks
+        setActiveThroughput(data.requestsThroughputSec ?? 0.0);
+        setAvgLatency(data.avgInferenceLatencyMs ?? 0.0);
+        setConcurrency(data.activeRequests ?? 0);
+        setActiveConnections(data.activeRequests ?? 0);
+        setGpuLoad(Math.round((data.workerUtilization ?? 0.0) * 100));
+        setLogs(data.recentLogs ?? []);
       } catch (err) {
         console.error("Failed to parse telemetry SSE packet:", err);
       }
     };
 
     eventSource.onerror = (err) => {
-      console.warn("Telemetry SSE connection lost. Reconnecting...", err);
+      console.warn("Telemetry SSE stream connection error:", err);
     };
 
-    // Increment local uptime clock
+    // Simple Uptime clock tick
     const uptimeTimer = setInterval(() => {
       setUptimeSeconds((prev) => prev + 1);
     }, 1000);
@@ -77,9 +77,9 @@ export default function InferXDashboard() {
     if (logListRef.current) {
       logListRef.current.scrollTop = logListRef.current.scrollHeight;
     }
-  }, [metrics.recentLogs]);
+  }, [logs]);
 
-  // Execute Playground Inference Request
+  // 3. Keep Playground Fully Functional
   const handleExecuteInference = async () => {
     if (!prompt.trim()) {
       alert("Please enter a query prompt.");
@@ -122,12 +122,12 @@ export default function InferXDashboard() {
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <div style={{ width: "12px", height: "12px", background: "#00f2fe", borderRadius: "50%", boxShadow: "0 0 12px #00f2fe" }} />
           <h1 style={{ fontSize: "1.4rem", fontWeight: 700, background: "linear-gradient(135deg, #00f2fe, #4facfe)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            InferX Operations Center (Real-Time SSE)
+            InferX Operations Center (Live SSE)
           </h1>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
           <div style={{ background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.3)", padding: "0.3rem 0.8rem", borderRadius: "20px", color: "#10b981", fontSize: "0.85rem", fontWeight: 600 }}>
-            ● LIVE SSE ENGINE
+            ● PURE SSE STREAM
           </div>
           <div style={{ fontSize: "0.85rem", color: "#9ca3af" }}>
             Uptime: <span style={{ color: "#f3f4f6", fontFamily: "monospace" }}>{formatUptime(uptimeSeconds)}</span>
@@ -145,25 +145,25 @@ export default function InferXDashboard() {
             <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(0,242,254,0.15)", borderRadius: "12px", padding: "1.25rem" }}>
               <div style={{ fontSize: "0.8rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600 }}>Active Throughput</div>
               <div style={{ fontSize: "1.8rem", fontWeight: 700, marginTop: "0.4rem" }}>
-                {metrics.requestsThroughputSec.toFixed(1)} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>RPS</span>
+                {activeThroughput.toFixed(1)} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>RPS</span>
               </div>
-              <div style={{ fontSize: "0.75rem", color: "#10b981", marginTop: "0.5rem" }}>Real-Time 5s Window</div>
+              <div style={{ fontSize: "0.75rem", color: "#10b981", marginTop: "0.5rem" }}>Live 5s Window</div>
             </div>
 
             {/* Average Latency (ms) */}
             <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(79,172,254,0.15)", borderRadius: "12px", padding: "1.25rem" }}>
               <div style={{ fontSize: "0.8rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600 }}>Avg Latency</div>
               <div style={{ fontSize: "1.8rem", fontWeight: 700, marginTop: "0.4rem" }}>
-                {metrics.avgInferenceLatencyMs.toFixed(1)} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>ms</span>
+                {avgLatency.toFixed(1)} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>ms</span>
               </div>
-              <div style={{ fontSize: "0.75rem", color: "#4facfe", marginTop: "0.5rem" }}>Moving Execution Avg</div>
+              <div style={{ fontSize: "0.75rem", color: "#4facfe", marginTop: "0.5rem" }}>Execution Moving Avg</div>
             </div>
 
-            {/* GPU / CPU Load */}
+            {/* Engine Load (%) */}
             <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "12px", padding: "1.25rem" }}>
               <div style={{ fontSize: "0.8rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600 }}>Engine Load</div>
               <div style={{ fontSize: "1.8rem", fontWeight: 700, marginTop: "0.4rem", color: "#00f2fe" }}>
-                {Math.round(metrics.workerUtilization * 100)}%
+                {gpuLoad}%
               </div>
               <div style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: "0.5rem" }}>Host CPU Utilization</div>
             </div>
@@ -172,9 +172,9 @@ export default function InferXDashboard() {
             <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "12px", padding: "1.25rem" }}>
               <div style={{ fontSize: "0.8rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600 }}>Concurrency</div>
               <div style={{ fontSize: "1.8rem", fontWeight: 700, marginTop: "0.4rem" }}>
-                {metrics.activeRequests}
+                {concurrency}
               </div>
-              <div style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: "0.5rem" }}>Active Connections</div>
+              <div style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: "0.5rem" }}>Active Connections ({activeConnections})</div>
             </div>
           </div>
 
@@ -216,17 +216,17 @@ export default function InferXDashboard() {
           </div>
         </div>
 
-        {/* Right Column: Live Logs */}
+        {/* Right Column: Gossip Cluster Logs */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "1.25rem", height: "100%", display: "flex", flexDirection: "column" }}>
             <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.75rem", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "0.5rem" }}>
-              Live Telemetry Log Feed (SSE)
+              Gossip Cluster Logs (Pure SSE)
             </h3>
             <div ref={logListRef} style={{ flex: 1, background: "rgba(6,9,19,0.9)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "6px", padding: "0.75rem", fontFamily: "monospace", fontSize: "0.78rem", overflowY: "auto", maxHeight: "540px", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-              {metrics.recentLogs.length === 0 ? (
-                <div style={{ color: "#6b7280", textAlign: "center", paddingTop: "2rem" }}>Waiting for telemetry logs...</div>
+              {logs.length === 0 ? (
+                <div style={{ color: "#6b7280", textAlign: "center", paddingTop: "2rem" }}>Waiting for real-time telemetry events...</div>
               ) : (
-                metrics.recentLogs.map((log) => (
+                logs.map((log) => (
                   <div key={log.id} style={{ lineHeight: 1.35 }}>
                     <span style={{ color: "#6b7280" }}>[{log.timestamp}]</span>{" "}
                     <span style={{ color: "#00f2fe", fontWeight: 600 }}>{log.source}</span>{" "}

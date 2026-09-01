@@ -15,6 +15,8 @@ export async function POST(req: NextRequest) {
     const prompt = body.prompt || "";
     model = body.model || "local-ml";
 
+    engineState.addLog("gateway", `Request received for model: ${model}`, "info");
+
     if (!prompt) {
       const duration = performance.now() - startTime;
       engineState.recordRequestEnd(duration, "Inference failed: Empty prompt provided", "gateway", true);
@@ -44,7 +46,7 @@ export async function POST(req: NextRequest) {
     } else {
       // Local ML Tensor Matrix Calculation (Softmax & Logits)
       const tokens = Array.from(prompt as string).map((c) => c.charCodeAt(0));
-      const duration = performance.now() - startTime;
+      const calcDuration = performance.now() - startTime;
       resultPayload = {
         status: "success",
         model_engine: "InferX-LocalML-v1.0 (ONNX Linear Layer)",
@@ -53,17 +55,17 @@ export async function POST(req: NextRequest) {
         inference_logits: [0.281, 0.202, 0.308, 0.209],
         predicted_class: "QUESTION_QUERY",
         confidence_score: 0.308,
-        latency_ms: Number(duration.toFixed(3)),
+        latency_ms: Number(calcDuration.toFixed(3)),
         response: `Local ML Engine processed ${tokens.length} input tokens. Matrix classification: [QUESTION_QUERY] (30.8% confidence).`,
       };
     }
 
     const duration = performance.now() - startTime;
-    // 2. Record successful execution
+    // 2. Record successful execution in model_runtime
     engineState.recordRequestEnd(
       duration,
-      `Inference completed for ${model} (${duration.toFixed(1)}ms)`,
-      "gateway",
+      `E2E Prediction resolved in ${duration.toFixed(2)}ms for ${model}`,
+      "model_runtime",
       false
     );
 
@@ -71,7 +73,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     const duration = performance.now() - startTime;
     const errorMsg = error?.message || "Unknown execution failure";
-    // 3. Record failed execution
+    // 3. Record failed execution in supervisor
     engineState.recordRequestEnd(
       duration,
       `Inference failed for ${model}: ${errorMsg}`,
