@@ -22,7 +22,7 @@ interface EngineMetrics {
 export default function InferXDashboard() {
   // 1. Persistent React States for Telemetry Tracking
   const [activeConnections, setActiveConnections] = useState<number>(0);
-  const [completedLatencies, setCompletedLatencies] = useState<number[]>([]);
+  const [latencies, setLatencies] = useState<number[]>([]);
   const [activeThroughput, setActiveThroughput] = useState<number>(0.0);
   const [gpuLoad, setGpuLoad] = useState<number>(0);
   const [logs, setLogs] = useState<EngineLog[]>([]);
@@ -38,11 +38,11 @@ export default function InferXDashboard() {
   const throughputTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 3. Compute Display Average Latency (Retains moving average of completed runs across idle states)
-  const displayAvgLatency = completedLatencies.length
-    ? (completedLatencies.reduce((a, b) => a + b, 0) / completedLatencies.length).toFixed(1)
+  const avgLatencyValue = latencies.length
+    ? (latencies.reduce((a, b) => a + b, 0) / latencies.length).toFixed(1)
     : "0.0";
 
-  // Bind SSE Stream Directly for Logs & Background Sync (Never overwrites completedLatencies with 0)
+  // Bind SSE Stream Directly for Logs & Background Sync
   useEffect(() => {
     const eventSource = new EventSource("/api/telemetry");
 
@@ -114,14 +114,17 @@ export default function InferXDashboard() {
 
       const data = await res.json();
       setOutput(JSON.stringify(data, null, 2));
+
+      // Extract numeric latency value (prefer data.latency_ms or fallback to performance duration)
+      const numericLatency = data.latency_ms ?? (performance.now() - startTime);
+
+      // Append numeric latency to latencies state array (retain last 10 entries)
+      setLatencies((prev) => [...prev.slice(-9), numericLatency]);
     } catch (err: any) {
+      const errorLatency = performance.now() - startTime;
+      setLatencies((prev) => [...prev.slice(-9), errorLatency]);
       setOutput(`// Execution Failure:\n${err?.message || "Connection failed"}`);
     } finally {
-      const duration = performance.now() - startTime;
-
-      // Extract numeric duration and append to persistent completedLatencies
-      setCompletedLatencies((prev) => [...prev, duration]);
-
       // Decrement active connections
       setActiveConnections((prev) => {
         const nextConn = Math.max(0, prev - 1);
@@ -182,11 +185,11 @@ export default function InferXDashboard() {
               <div style={{ fontSize: "0.75rem", color: "#10b981", marginTop: "0.5rem" }}>Live Request Activity</div>
             </div>
 
-            {/* 4. Average Latency (ms) - Binds directly to displayAvgLatency */}
+            {/* 4. Average Latency (ms) - Binds directly to avgLatencyValue */}
             <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(79,172,254,0.15)", borderRadius: "12px", padding: "1.25rem" }}>
               <div style={{ fontSize: "0.8rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600 }}>Avg Latency</div>
               <div style={{ fontSize: "1.8rem", fontWeight: 700, marginTop: "0.4rem" }}>
-                {displayAvgLatency} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>ms</span>
+                {avgLatencyValue} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>ms</span>
               </div>
               <div style={{ fontSize: "0.75rem", color: "#4facfe", marginTop: "0.5rem" }}>Moving Average (Completed Runs)</div>
             </div>
@@ -252,7 +255,7 @@ export default function InferXDashboard() {
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {/* Gossip Cluster Logs Card */}
           <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "1.25rem", display: "flex", flexDirection: "column" }}>
-            <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.75rem", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "0.5rem" }}>
+            <h3 style={{ fontSize: "1rem", fontWeight 700, marginBottom: "0.75rem", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "0.5rem" }}>
               Gossip Cluster Logs (Pure SSE)
             </h3>
             <div ref={logListRef} style={{ background: "rgba(6,9,19,0.9)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "6px", padding: "0.75rem", fontFamily: "monospace", fontSize: "0.78rem", overflowY: "auto", height: "360px", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
