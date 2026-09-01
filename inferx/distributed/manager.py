@@ -7,12 +7,12 @@ Handles cluster joins, leaves, and migrations.
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from inferx.distributed.discovery import NodeRegistry, Membership
+from inferx.distributed.discovery import Membership, NodeRegistry
 from inferx.distributed.election import LeaderElection
 from inferx.distributed.interfaces import NodeInfo, NodeStatus
-from inferx.distributed.rpc import ClusterRpcServer, ClusterRpcClient
+from inferx.distributed.rpc import ClusterRpcClient, ClusterRpcServer
 from inferx.distributed.state import ClusterStateManager
 from inferx.utils.logging import get_logger
 
@@ -29,9 +29,9 @@ class ClusterManager:
         node_id: str,
         host: str,
         port: int,
-        peers: List[Dict[str, Any]],
+        peers: list[dict[str, Any]],
         vram_capacity: int = 16 * 1024 * 1024 * 1024,
-        hosted_models: Optional[List[str]] = None,
+        hosted_models: list[str] | None = None,
         security_token: str = "cluster-secret-key",
     ) -> None:
         self.node_id = node_id
@@ -146,7 +146,7 @@ class ClusterManager:
             )
             raise
 
-    async def handle_join_node(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def handle_join_node(self, params: dict[str, Any]) -> dict[str, Any]:
         """RPC Endpoint: Processes cluster join requests from new nodes."""
         node_data = params.get("node_info", {})
         if not node_data:

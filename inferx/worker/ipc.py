@@ -6,9 +6,8 @@ Implements a high-performance, zero-copy shared memory data exchange pool.
 Allows transferring large payload tensors without Python serialization overhead.
 """
 
-from multiprocessing.shared_memory import SharedMemory
 import threading
-from typing import List
+from multiprocessing.shared_memory import SharedMemory
 
 
 class SharedMemoryPool:
@@ -67,7 +66,7 @@ class SharedMemoryAllocator:
         self.slot_size = slot_size
         self.num_slots = pool_size // slot_size
 
-        self._free_slots: List[int] = list(range(self.num_slots))
+        self._free_slots: list[int] = list(range(self.num_slots))
         self._lock = threading.Lock()
 
     def allocate(self) -> int:

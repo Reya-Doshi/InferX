@@ -6,11 +6,11 @@ Implements thread-safe Counters, Gauges, and Histograms, exposing a native
 export formatter compatible with Prometheus/Grafana scrapers.
 """
 
-from typing import Dict, List, Optional, Tuple, Any
 import threading
+from typing import Any
 
 
-def format_labels(labels: Optional[Dict[str, str]]) -> str:
+def format_labels(labels: dict[str, str] | None) -> str:
     """Formats labels dictionary into a Prometheus label string bracket."""
     if not labels:
         return ""
@@ -24,10 +24,10 @@ class Counter:
     def __init__(self, name: str, description: str) -> None:
         self.name = name
         self.description = description
-        self._values: Dict[Tuple[Tuple[str, str], ...], float] = {}
+        self._values: dict[tuple[tuple[str, str], ...], float] = {}
         self._lock = threading.Lock()
 
-    def inc(self, value: float = 1.0, labels: Optional[Dict[str, str]] = None) -> None:
+    def inc(self, value: float = 1.0, labels: dict[str, str] | None = None) -> None:
         """Increments counter value for a given label set."""
         if value < 0:
             raise ValueError("Counter increments must be non-negative.")
@@ -36,7 +36,7 @@ class Counter:
         with self._lock:
             self._values[label_key] = self._values.get(label_key, 0.0) + value
 
-    def get_lines(self) -> List[str]:
+    def get_lines(self) -> list[str]:
         """Returns Prometheus text lines for this counter."""
         lines = [
             f"# HELP {self.name} {self.description}",
@@ -55,26 +55,26 @@ class Gauge:
     def __init__(self, name: str, description: str) -> None:
         self.name = name
         self.description = description
-        self._values: Dict[Tuple[Tuple[str, str], ...], float] = {}
+        self._values: dict[tuple[tuple[str, str], ...], float] = {}
         self._lock = threading.Lock()
 
-    def set(self, value: float, labels: Optional[Dict[str, str]] = None) -> None:
+    def set(self, value: float, labels: dict[str, str] | None = None) -> None:
         """Sets gauge to a specific value."""
         label_key = tuple(sorted(labels.items())) if labels else ()
         with self._lock:
             self._values[label_key] = value
 
-    def inc(self, value: float = 1.0, labels: Optional[Dict[str, str]] = None) -> None:
+    def inc(self, value: float = 1.0, labels: dict[str, str] | None = None) -> None:
         label_key = tuple(sorted(labels.items())) if labels else ()
         with self._lock:
             self._values[label_key] = self._values.get(label_key, 0.0) + value
 
-    def dec(self, value: float = 1.0, labels: Optional[Dict[str, str]] = None) -> None:
+    def dec(self, value: float = 1.0, labels: dict[str, str] | None = None) -> None:
         label_key = tuple(sorted(labels.items())) if labels else ()
         with self._lock:
             self._values[label_key] = self._values.get(label_key, 0.0) - value
 
-    def get_lines(self) -> List[str]:
+    def get_lines(self) -> list[str]:
         """Returns Prometheus text lines for this gauge."""
         lines = [f"# HELP {self.name} {self.description}", f"# TYPE {self.name} gauge"]
         with self._lock:
@@ -87,18 +87,18 @@ class Gauge:
 class Histogram:
     """Tracks value distribution occurrences inside discrete bucket bins."""
 
-    def __init__(self, name: str, description: str, buckets: List[float]) -> None:
+    def __init__(self, name: str, description: str, buckets: list[float]) -> None:
         self.name = name
         self.description = description
         self.buckets = sorted(buckets) + [float("inf")]
 
         # Maps labels tuple -> bucket_index -> count
-        self._counts: Dict[Tuple[Tuple[str, str], ...], List[int]] = {}
+        self._counts: dict[tuple[tuple[str, str], ...], list[int]] = {}
         # Maps labels tuple -> total sum
-        self._sums: Dict[Tuple[Tuple[str, str], ...], float] = {}
+        self._sums: dict[tuple[tuple[str, str], ...], float] = {}
         self._lock = threading.Lock()
 
-    def observe(self, value: float, labels: Optional[Dict[str, str]] = None) -> None:
+    def observe(self, value: float, labels: dict[str, str] | None = None) -> None:
         """Records a value distribution observation."""
         label_key = tuple(sorted(labels.items())) if labels else ()
 
@@ -115,7 +115,7 @@ class Histogram:
                 if value <= bucket:
                     self._counts[label_key][idx] += 1
 
-    def get_lines(self) -> List[str]:
+    def get_lines(self) -> list[str]:
         """Returns Prometheus text lines for this histogram."""
         lines = [
             f"# HELP {self.name} {self.description}",
@@ -154,7 +154,7 @@ class MetricsRegistry:
     """
 
     def __init__(self) -> None:
-        self._metrics: Dict[str, Any] = {}
+        self._metrics: dict[str, Any] = {}
         self._lock = threading.Lock()
 
     def counter(self, name: str, description: str) -> Counter:
@@ -169,7 +169,7 @@ class MetricsRegistry:
                 self._metrics[name] = Gauge(name, description)
             return self._metrics[name]
 
-    def histogram(self, name: str, description: str, buckets: List[float]) -> Histogram:
+    def histogram(self, name: str, description: str, buckets: list[float]) -> Histogram:
         with self._lock:
             if name not in self._metrics:
                 self._metrics[name] = Histogram(name, description, buckets)

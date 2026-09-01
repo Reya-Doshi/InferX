@@ -7,10 +7,9 @@ manages active connection pools, and drives graceful shutdowns.
 """
 
 import asyncio
-from typing import Optional, Set
 
-from inferx.gateway.protocols import RestAdapter, WebSocketAdapter
 from inferx.gateway.metrics import GatewayMetrics
+from inferx.gateway.protocols import RestAdapter, WebSocketAdapter
 from inferx.utils.logging import get_logger
 
 logger = get_logger("gateway.manager")
@@ -28,9 +27,9 @@ class GatewayManager:
         self,
         host: str = "127.0.0.1",
         port: int = 8080,
-        rest_adapter: Optional[RestAdapter] = None,
-        ws_adapter: Optional[WebSocketAdapter] = None,
-        metrics: Optional[GatewayMetrics] = None,
+        rest_adapter: RestAdapter | None = None,
+        ws_adapter: WebSocketAdapter | None = None,
+        metrics: GatewayMetrics | None = None,
     ) -> None:
         self.host = host
         self.port = port
@@ -38,8 +37,8 @@ class GatewayManager:
         self.ws_adapter = ws_adapter
         self.metrics = metrics or GatewayMetrics()
 
-        self._server: Optional[asyncio.AbstractServer] = None
-        self._active_connections: Set[asyncio.StreamWriter] = set()
+        self._server: asyncio.AbstractServer | None = None
+        self._active_connections: set[asyncio.StreamWriter] = set()
         self._is_active = False
         self._lock = asyncio.Lock()
 

@@ -1,8 +1,10 @@
 # inferx/performance/load.py
 import asyncio
-import time
 import random
-from typing import Any, Callable, Coroutine, List, Optional
+import time
+from collections.abc import Callable, Coroutine
+from typing import Any
+
 from inferx.performance.interfaces import ILoadGenerator
 
 
@@ -10,7 +12,7 @@ class LoadGenerator(ILoadGenerator):
     """Simulates concurrent client traffic, bursts, and steady request generation against target handlers."""
 
     def __init__(
-        self, request_fn: Optional[Callable[[], Coroutine[Any, Any, Any]]] = None
+        self, request_fn: Callable[[], Coroutine[Any, Any, Any]] | None = None
     ) -> None:
         # Default mock request function if none provided
         self.request_fn = request_fn or self._default_mock_request
@@ -21,9 +23,9 @@ class LoadGenerator(ILoadGenerator):
 
     async def generate_steady_load(
         self, rps: float, duration_sec: float
-    ) -> List[float]:
+    ) -> list[float]:
         """Generates steady RPS stream of requests using asynchronous tasks."""
-        latencies: List[float] = []
+        latencies: list[float] = []
         1.0 / rps
         start_time = time.perf_counter()
 
@@ -59,9 +61,9 @@ class LoadGenerator(ILoadGenerator):
 
     async def generate_burst_load(
         self, concurrent_users: int, burst_size: int
-    ) -> List[float]:
+    ) -> list[float]:
         """Dispatches large batches of concurrent users in parallel to simulate traffic spikes."""
-        latencies: List[float] = []
+        latencies: list[float] = []
 
         async def run_single_request() -> None:
             t0 = time.perf_counter()

@@ -7,14 +7,14 @@ health aggregator probe collections, alerting rules, and timeline execution prof
 """
 
 import unittest
-from typing import Any, Dict, Tuple
+from typing import Any
 
-from inferx.observability.metrics import MetricsRegistry
-from inferx.observability.tracing import Tracer, parent_span_var
-from inferx.observability.health import HealthAggregator
 from inferx.observability.alert import AlertManager
-from inferx.observability.profiler import ExecutionTimeline
+from inferx.observability.health import HealthAggregator
 from inferx.observability.manager import TelemetryManager
+from inferx.observability.metrics import MetricsRegistry
+from inferx.observability.profiler import ExecutionTimeline
+from inferx.observability.tracing import Tracer, parent_span_var
 
 
 class TestObservability(unittest.IsolatedAsyncioTestCase):
@@ -104,10 +104,10 @@ class TestObservability(unittest.IsolatedAsyncioTestCase):
 
     async def test_health_aggregator_probes(self) -> None:
         # Register mock health probes
-        async def check_gpu() -> Tuple[bool, str]:
+        async def check_gpu() -> tuple[bool, str]:
             return True, "GPU normal"
 
-        async def check_vram() -> Tuple[bool, str]:
+        async def check_vram() -> tuple[bool, str]:
             # Simulate failure check
             return False, "VRAM threshold exceeded"
 
@@ -123,7 +123,7 @@ class TestObservability(unittest.IsolatedAsyncioTestCase):
 
     def test_alert_rules_evaluation(self) -> None:
         # Add rule: trigger if error rate > 5%
-        def check_errors(metrics: Dict[str, Any]) -> Tuple[bool, str]:
+        def check_errors(metrics: dict[str, Any]) -> tuple[bool, str]:
             err_rate = metrics.get("error_rate", 0.0)
             if err_rate > 5.0:
                 return True, f"Error rate is {err_rate}%"

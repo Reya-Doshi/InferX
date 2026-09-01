@@ -1,7 +1,8 @@
 # inferx/performance/chaos.py
 import logging
 import random
-from typing import Any, Dict, List
+from typing import Any
+
 from inferx.performance.interfaces import IChaosController, IFaultInjector
 
 logger = logging.getLogger("inferx.performance.chaos")
@@ -11,7 +12,7 @@ class ChaosController(IChaosController):
     """Simulates physical infrastructure failures, node terminations, clock drifts, and CPU/Memory resource constraints."""
 
     def __init__(self) -> None:
-        self.terminated_nodes: List[str] = []
+        self.terminated_nodes: list[str] = []
         self.network_delay_ms: float = 0.0
         self.cpu_stress_active: bool = False
         self.memory_stress_mb: int = 0
@@ -33,7 +34,7 @@ class ChaosController(IChaosController):
             f"CHAOS INJECTED: Applied resource pressure (CPU stress: {cpu_stress}, Memory: {memory_mb} MB)"
         )
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         return {
             "terminated_nodes": self.terminated_nodes.copy(),
             "network_delay_ms": self.network_delay_ms,

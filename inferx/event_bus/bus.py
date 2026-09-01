@@ -7,12 +7,12 @@ and historical event replays.
 """
 
 import asyncio
-from datetime import datetime, timezone
 import uuid
-from typing import Any, Dict, List, Optional
+from datetime import datetime, timezone
+from typing import Any
 
 from inferx.event_bus.envelope import EventEnvelope
-from inferx.event_bus.interfaces import IEventBus, IEventPersister, IDeadLetterQueue
+from inferx.event_bus.interfaces import IDeadLetterQueue, IEventBus, IEventPersister
 from inferx.event_bus.metrics import EventBusMetrics
 from inferx.utils.logging import get_logger
 
@@ -28,7 +28,7 @@ class InMemoryEventPersister(IEventPersister):
 
     def __init__(self, capacity: int = 10000) -> None:
         self.capacity = capacity
-        self._store: List[EventEnvelope] = []
+        self._store: list[EventEnvelope] = []
         self._lock = asyncio.Lock()
 
     async def save(self, envelope: EventEnvelope) -> None:
@@ -37,7 +37,7 @@ class InMemoryEventPersister(IEventPersister):
                 self._store.pop(0)
             self._store.append(envelope)
 
-    async def fetch_range(self, start_ns: int, end_ns: int) -> List[EventEnvelope]:
+    async def fetch_range(self, start_ns: int, end_ns: int) -> list[EventEnvelope]:
         async with self._lock:
             return [e for e in self._store if start_ns <= e.timestamp_ns <= end_ns]
 
@@ -63,9 +63,9 @@ class EventBus(IEventBus):
 
     def __init__(
         self,
-        persister: Optional[IEventPersister] = None,
-        dlq: Optional[IDeadLetterQueue] = None,
-        metrics: Optional[EventBusMetrics] = None,
+        persister: IEventPersister | None = None,
+        dlq: IDeadLetterQueue | None = None,
+        metrics: EventBusMetrics | None = None,
         queue_capacity: int = 5000,
     ) -> None:
         self.persister = persister or InMemoryEventPersister()
@@ -73,7 +73,7 @@ class EventBus(IEventBus):
         self.metrics = metrics or EventBusMetrics()
         self.queue_capacity = queue_capacity
 
-        self._subscriptions: Dict[str, Subscription] = {}
+        self._subscriptions: dict[str, Subscription] = {}
         self._lock = asyncio.Lock()
 
     async def publish(self, envelope: EventEnvelope) -> None:

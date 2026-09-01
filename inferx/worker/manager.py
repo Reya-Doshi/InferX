@@ -11,7 +11,6 @@ import json
 import multiprocessing
 import os
 import time
-from typing import Dict, List, Optional
 
 try:
     import psutil
@@ -20,16 +19,16 @@ except ImportError:
 
 from inferx.batcher.interfaces import Batch
 from inferx.scheduler.interfaces import ScheduledRequest
+from inferx.utils.logging import get_logger
+from inferx.worker.executor import BatchExecutor
 from inferx.worker.interfaces import (
+    IPCMessage,
     IWorkerManager,
     WorkerInfo,
     WorkerStatus,
-    IPCMessage,
 )
-from inferx.worker.ipc import SharedMemoryPool, SharedMemoryAllocator
-from inferx.worker.executor import BatchExecutor
+from inferx.worker.ipc import SharedMemoryAllocator, SharedMemoryPool
 from inferx.worker.metrics import WorkerMetrics
-from inferx.utils.logging import get_logger
 
 logger = get_logger("worker.manager")
 
@@ -37,7 +36,7 @@ logger = get_logger("worker.manager")
 def worker_process_hot_loop(
     worker_id: str,
     gpu_id: int,
-    cpu_cores: List[int],
+    cpu_cores: list[int],
     request_queue: multiprocessing.Queue,
     response_queue: multiprocessing.Queue,
     heartbeat_val: multiprocessing.Value,
@@ -132,7 +131,7 @@ class WorkerManager(IWorkerManager):
         shm_pool_size: int = 10 * 1024 * 1024,  # 10MB Shared Memory Pool
         shm_slot_size: int = 64 * 1024,  # 64KB per slot
         heartbeat_timeout_sec: float = 3.0,
-        metrics: Optional[WorkerMetrics] = None,
+        metrics: WorkerMetrics | None = None,
     ) -> None:
         self.num_workers = num_workers
         self.shm_pool_size = shm_pool_size
@@ -141,7 +140,7 @@ class WorkerManager(IWorkerManager):
         self.metrics = metrics or WorkerMetrics()
 
         self._shm_name = f"inferx_shm_{uuid_str()}"
-        self._shm: Optional[SharedMemoryPool] = None
+        self._shm: SharedMemoryPool | None = None
         self._allocator = SharedMemoryAllocator(
             pool_size=shm_pool_size, slot_size=shm_slot_size
         )
@@ -153,13 +152,13 @@ class WorkerManager(IWorkerManager):
         self.stop_event = ctx.Event()
 
         # Worker state tracking
-        self._processes: Dict[str, multiprocessing.Process] = {}
-        self._heartbeats: Dict[str, multiprocessing.Value] = {}
-        self._worker_infos: Dict[str, WorkerInfo] = {}
+        self._processes: dict[str, multiprocessing.Process] = {}
+        self._heartbeats: dict[str, multiprocessing.Value] = {}
+        self._worker_infos: dict[str, WorkerInfo] = {}
 
-        self._pending_futures: Dict[str, asyncio.Future[bytes]] = {}
-        self._watchdog_task: Optional[asyncio.Task[None]] = None
-        self._reader_task: Optional[asyncio.Task[None]] = None
+        self._pending_futures: dict[str, asyncio.Future[bytes]] = {}
+        self._watchdog_task: asyncio.Task[None] | None = None
+        self._reader_task: asyncio.Task[None] | None = None
         self._is_active = False
         self._lock = asyncio.Lock()
 
@@ -265,7 +264,7 @@ class WorkerManager(IWorkerManager):
         self._pending_futures[request.request_id] = fut
         return fut
 
-    def get_worker_status(self, worker_id: str) -> Optional[WorkerStatus]:
+    def get_worker_status(self, worker_id: str) -> WorkerStatus | None:
         """Returns the status enum for a specific worker process."""
         info = self._worker_infos.get(worker_id)
         return info.status if info else None

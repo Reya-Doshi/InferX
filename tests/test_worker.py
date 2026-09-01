@@ -7,13 +7,13 @@ heartbeat timeouts, and concurrent CUDA streams executions.
 """
 
 import asyncio
-import unittest
 import time
+import unittest
 
 from inferx.scheduler.interfaces import ScheduledRequest
+from inferx.worker.executor import BatchExecutor, CudaStream
 from inferx.worker.interfaces import WorkerStatus
-from inferx.worker.ipc import SharedMemoryPool, SharedMemoryAllocator
-from inferx.worker.executor import CudaStream, BatchExecutor
+from inferx.worker.ipc import SharedMemoryAllocator, SharedMemoryPool
 from inferx.worker.manager import WorkerManager
 
 

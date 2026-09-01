@@ -9,11 +9,11 @@ latencies under sustained query loads.
 import asyncio
 import time
 
-from inferx.model.interfaces import ModelMetadata
-from inferx.model.registry import ModelRegistry
-from inferx.model.loader import ModelLoader
 from inferx.model.cache import ModelCache
+from inferx.model.interfaces import ModelMetadata
+from inferx.model.loader import ModelLoader
 from inferx.model.manager import ModelRuntimeManager
+from inferx.model.registry import ModelRegistry
 from inferx.utils.logging import configure_logging, get_logger
 
 configure_logging("INFO")

@@ -8,6 +8,9 @@ dependencies, and initiates the core event loop.
 
 import argparse
 import asyncio
+
+# Configure a fallback console logger for errors during bootstrap
+import logging
 import os
 import sys
 
@@ -15,9 +18,6 @@ from inferx.core.bootstrap import bootstrap_core
 from inferx.core.context import RuntimeContext, RuntimeState
 from inferx.interfaces.core import IRuntimeLifecycle, IRuntimeSupervisor
 from inferx.utils.logging import get_logger
-
-# Configure a fallback console logger for errors during bootstrap
-import logging
 
 logging.basicConfig(level=logging.INFO)
 bootstrap_logger = logging.getLogger("inferx.bootstrap")

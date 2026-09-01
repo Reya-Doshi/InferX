@@ -8,7 +8,6 @@ scheduling (vLLM style), Adaptive batch sizing, and batch split/merge operations
 
 import asyncio
 import uuid
-from typing import Dict, List, Optional, Tuple
 
 from inferx.batcher.interfaces import Batch, IBatcher, IBatchHandler
 from inferx.batcher.metrics import BatcherMetrics
@@ -19,7 +18,7 @@ from inferx.utils.logging import get_logger
 logger = get_logger("batcher")
 
 
-def split_batch(batch: Batch, chunk_size: int) -> List[Batch]:
+def split_batch(batch: Batch, chunk_size: int) -> list[Batch]:
     """
     Splits a large Batch into smaller Batch segments.
 
@@ -84,7 +83,7 @@ class StaticBatcher(IBatcher):
         handler: IBatchHandler,
         max_batch_size: int,
         max_queue_delay_ms: int,
-        metrics: Optional[BatcherMetrics] = None,
+        metrics: BatcherMetrics | None = None,
     ) -> None:
         self.scheduler = scheduler
         self.handler = handler
@@ -92,7 +91,7 @@ class StaticBatcher(IBatcher):
         self.max_queue_delay_sec = max_queue_delay_ms / 1000.0
         self.metrics = metrics or BatcherMetrics()
 
-        self._batch_task: Optional[asyncio.Task[None]] = None
+        self._batch_task: asyncio.Task[None] | None = None
         self._is_active = False
         self._lock = asyncio.Lock()
 
@@ -161,7 +160,7 @@ class StaticBatcher(IBatcher):
                     component="batcher",
                 )
 
-    async def _dispatch_batch(self, requests: List[ScheduledRequest]) -> None:
+    async def _dispatch_batch(self, requests: list[ScheduledRequest]) -> None:
         """Pads tensors, records metrics, and dispatches to handler."""
         if not requests:
             return
@@ -216,11 +215,11 @@ class ContinuousBatcher:
     def __init__(self, scheduler: IScheduler, max_batch_size: int) -> None:
         self.scheduler = scheduler
         self.max_batch_size = max_batch_size
-        self.active_requests: List[ScheduledRequest] = []
+        self.active_requests: list[ScheduledRequest] = []
         # Maps request_id to generated tokens count
-        self._generated_counts: Dict[str, int] = {}
+        self._generated_counts: dict[str, int] = {}
 
-    async def step(self) -> List[Tuple[ScheduledRequest, int]]:
+    async def step(self) -> list[tuple[ScheduledRequest, int]]:
         """
         Executes one token generation step.
 
@@ -281,7 +280,7 @@ class AdaptiveBatcher(StaticBatcher):
         max_batch_size: int = 32,
         congestion_threshold: int = 20,
         max_queue_delay_ms: int = 10,
-        metrics: Optional[BatcherMetrics] = None,
+        metrics: BatcherMetrics | None = None,
     ) -> None:
         super().__init__(
             scheduler, handler, max_batch_size, max_queue_delay_ms, metrics

@@ -7,7 +7,6 @@ and triggers size-based evictions.
 """
 
 from collections import OrderedDict
-from typing import List, Optional, Tuple
 
 from inferx.model.interfaces import IModelInstance
 from inferx.utils.logging import get_logger
@@ -24,10 +23,10 @@ class ModelCache:
 
     def __init__(self, max_vram_bytes: int = 16 * 1024 * 1024 * 1024) -> None:
         self.max_vram_bytes = max_vram_bytes
-        self._cache: OrderedDict[Tuple[str, str], IModelInstance] = OrderedDict()
+        self._cache: OrderedDict[tuple[str, str], IModelInstance] = OrderedDict()
         self._current_vram = 0
 
-    def get(self, key: Tuple[str, str]) -> Optional[IModelInstance]:
+    def get(self, key: tuple[str, str]) -> IModelInstance | None:
         """Retrieves a model instance and updates its LRU position."""
         if key not in self._cache:
             return None
@@ -38,8 +37,8 @@ class ModelCache:
         return instance
 
     def put(
-        self, key: Tuple[str, str], instance: IModelInstance
-    ) -> List[IModelInstance]:
+        self, key: tuple[str, str], instance: IModelInstance
+    ) -> list[IModelInstance]:
         """
         Inserts a model instance, evicting older models if VRAM limits are crossed.
 
@@ -55,7 +54,7 @@ class ModelCache:
                 f"exceeds maximum cache size ({self.max_vram_bytes} bytes)."
             )
 
-        evicted: List[IModelInstance] = []
+        evicted: list[IModelInstance] = []
 
         # Evict until we have enough free space
         while self._current_vram + instance_vram > self.max_vram_bytes and self._cache:
@@ -74,7 +73,7 @@ class ModelCache:
         self._current_vram += instance_vram
         return evicted
 
-    def remove(self, key: Tuple[str, str]) -> Optional[IModelInstance]:
+    def remove(self, key: tuple[str, str]) -> IModelInstance | None:
         """Removes a model instance from the cache, freeing VRAM footprint."""
         if key in self._cache:
             instance = self._cache.pop(key)

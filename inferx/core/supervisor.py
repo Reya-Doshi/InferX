@@ -8,9 +8,9 @@ and non-blocking process joins.
 
 import asyncio
 import multiprocessing
-from multiprocessing.context import BaseContext
 import time
-from typing import Any, Optional
+from multiprocessing.context import BaseContext
+from typing import Any
 
 from inferx.interfaces.core import IRuntimeSupervisor
 from inferx.utils.logging import get_logger, telemetry_context
@@ -64,7 +64,7 @@ class RuntimeSupervisor(IRuntimeSupervisor):
         self.gpus = gpus
         self.heartbeat_timeout = heartbeat_timeout_ms / 1000.0
         self._workers: dict[str, WorkerHandle] = {}
-        self._monitor_task: Optional[asyncio.Task[None]] = None
+        self._monitor_task: asyncio.Task[None] | None = None
         self._is_active = False
         self._lock = asyncio.Lock()
         self._mp_ctx: BaseContext = multiprocessing.get_context("spawn")

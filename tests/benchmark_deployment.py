@@ -1,8 +1,9 @@
 # tests/benchmark_deployment.py
 import asyncio
-import time
-import os
 import json
+import os
+import time
+
 from inferx.deployment.config import RuntimeConfigurationManager
 from inferx.deployment.controller import DeploymentController
 

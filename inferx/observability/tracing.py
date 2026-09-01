@@ -7,10 +7,10 @@ via ContextVars, and background buffered trace exporters.
 """
 
 import asyncio
-from contextvars import ContextVar
 import time
 import uuid
-from typing import Any, Dict, List, Optional
+from contextvars import ContextVar
+from typing import Any
 
 from inferx.observability.interfaces import ITracer, SpanData
 from inferx.utils.logging import get_logger
@@ -18,9 +18,7 @@ from inferx.utils.logging import get_logger
 logger = get_logger("observability.tracing")
 
 # Task-local ContextVar tracking active parent span context
-parent_span_var: ContextVar[Optional[SpanData]] = ContextVar(
-    "parent_span", default=None
-)
+parent_span_var: ContextVar[SpanData | None] = ContextVar("parent_span", default=None)
 
 
 class Span:
@@ -29,7 +27,7 @@ class Span:
     """
 
     def __init__(
-        self, tracer: "Tracer", name: str, attributes: Optional[Dict[str, Any]] = None
+        self, tracer: "Tracer", name: str, attributes: dict[str, Any] | None = None
     ) -> None:
         self.tracer = tracer
         self.name = name
@@ -37,7 +35,7 @@ class Span:
 
         self.span_id = str(uuid.uuid4())[:16]
         self.trace_id = ""
-        self.parent_span_id: Optional[str] = None
+        self.parent_span_id: str | None = None
         self.start_time_ns = 0
 
         self._token: Any = None
@@ -105,11 +103,11 @@ class BufferedSpanExporter:
         self.flush_interval = flush_interval_sec
         self.batch_size = batch_size
 
-        self._queue: List[SpanData] = []
-        self._exported_spans: List[SpanData] = []  # In-memory storage for testing/logs
+        self._queue: list[SpanData] = []
+        self._exported_spans: list[SpanData] = []  # In-memory storage for testing/logs
         self._lock = threading_lock()
 
-        self._loop_task: Optional[asyncio.Task[None]] = None
+        self._loop_task: asyncio.Task[None] | None = None
         self._is_active = False
 
     def start(self) -> None:
@@ -151,7 +149,7 @@ class BufferedSpanExporter:
                 # Trigger immediate flush in background
                 self._flush()
 
-    def get_exported_spans(self) -> List[SpanData]:
+    def get_exported_spans(self) -> list[SpanData]:
         """Returns copies of all exported span records."""
         with self._lock:
             return list(self._exported_spans)
@@ -187,7 +185,7 @@ class Tracer(ITracer):
     Tracing coordinator orchestrating trace span lifetimes.
     """
 
-    def __init__(self, exporter: Optional[BufferedSpanExporter] = None) -> None:
+    def __init__(self, exporter: BufferedSpanExporter | None = None) -> None:
         self.exporter = exporter or BufferedSpanExporter()
         try:
             loop = asyncio.get_running_loop()
@@ -196,7 +194,7 @@ class Tracer(ITracer):
         except RuntimeError:
             pass
 
-    def span(self, name: str, attributes: Optional[Dict[str, Any]] = None) -> Span:
+    def span(self, name: str, attributes: dict[str, Any] | None = None) -> Span:
         return Span(self, name, attributes)
 
 

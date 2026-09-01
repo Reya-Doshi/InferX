@@ -13,10 +13,11 @@ import base64
 import hashlib
 import json
 import uuid
-from typing import Any, Dict, Optional, Tuple, Callable
+from collections.abc import Callable
+from typing import Any
 
-from inferx.gateway.interfaces import IProtocolAdapter, GatewayRequestContext
-from inferx.gateway.middleware import MiddlewarePipeline, MiddlewareException
+from inferx.gateway.interfaces import GatewayRequestContext, IProtocolAdapter
+from inferx.gateway.middleware import MiddlewareException, MiddlewarePipeline
 from inferx.gateway.router import GatewayRouter
 from inferx.utils.logging import get_logger
 
@@ -27,7 +28,7 @@ class ProtocolHelper:
     """Helper utilities for parsing raw TCP streams."""
 
     @staticmethod
-    async def parse_http_request(reader: Any) -> Tuple[str, str, Dict[str, str], str]:
+    async def parse_http_request(reader: Any) -> tuple[str, str, dict[str, str], str]:
         """
         Parses raw socket HTTP/1.1 requests.
 
@@ -47,7 +48,7 @@ class ProtocolHelper:
         method, path, _ = parts
 
         # Read Headers
-        headers: Dict[str, str] = {}
+        headers: dict[str, str] = {}
         while True:
             line_bytes = await reader.readline()
             line = line_bytes.decode("utf-8").strip()
@@ -79,8 +80,8 @@ class RestAdapter(IProtocolAdapter):
         pipeline: MiddlewarePipeline,
         router: GatewayRouter,
         run_prediction_fn: Callable[[str, str, str], Any],
-        ws_adapter: Optional[WebSocketAdapter] = None,
-        telemetry_manager: Optional[Any] = None,
+        ws_adapter: WebSocketAdapter | None = None,
+        telemetry_manager: Any | None = None,
     ) -> None:
         self.pipeline = pipeline
         self.router = router
@@ -230,7 +231,7 @@ class RestAdapter(IProtocolAdapter):
             data_str = f"data: {json.dumps(data_dict)}\n\n"
             chunk_bytes = data_str.encode("utf-8")
 
-            writer.write(f"{len(chunk_bytes):x}\r\n".encode("utf-8"))
+            writer.write(f"{len(chunk_bytes):x}\r\n".encode())
             writer.write(chunk_bytes)
             writer.write(b"\r\n")
             await writer.drain()
@@ -239,7 +240,7 @@ class RestAdapter(IProtocolAdapter):
 
         # Terminating frame
         done_bytes = b"data: [DONE]\n\n"
-        writer.write(f"{len(done_bytes):x}\r\n".encode("utf-8"))
+        writer.write(f"{len(done_bytes):x}\r\n".encode())
         writer.write(done_bytes)
         writer.write(b"\r\n")
 
@@ -285,7 +286,7 @@ class RestAdapter(IProtocolAdapter):
             dashboard_path = os.path.join(current_dir, "dashboard.html")
 
             if os.path.exists(dashboard_path):
-                with open(dashboard_path, "r", encoding="utf-8") as f:
+                with open(dashboard_path, encoding="utf-8") as f:
                     content = f.read()
             else:
                 content = "<h1>Dashboard Not Found</h1>"
@@ -327,6 +328,7 @@ class RestAdapter(IProtocolAdapter):
         """Serves live dashboard telemetry values."""
         try:
             import psutil
+
             real_cpu = round(psutil.cpu_percent(interval=None) / 100.0, 2)
             real_ram = round(psutil.virtual_memory().percent / 100.0, 2)
         except Exception:
@@ -336,7 +338,11 @@ class RestAdapter(IProtocolAdapter):
         if not self.telemetry_manager:
             import random
 
-            cpu_val = real_cpu if real_cpu is not None and real_cpu > 0 else round(random.uniform(0.18, 0.42), 2)
+            cpu_val = (
+                real_cpu
+                if real_cpu is not None and real_cpu > 0
+                else round(random.uniform(0.18, 0.42), 2)
+            )
             data = {
                 "active_connections": random.randint(12, 28),
                 "requests_throughput_sec": round(random.uniform(140.0, 185.0), 2),
@@ -344,7 +350,11 @@ class RestAdapter(IProtocolAdapter):
                 "queue_depth": random.randint(2, 8),
                 "worker_utilization": cpu_val,
                 "cpu_utilization": cpu_val,
-                "ram_utilization": real_ram if real_ram is not None else round(random.uniform(0.30, 0.55), 2),
+                "ram_utilization": (
+                    real_ram
+                    if real_ram is not None
+                    else round(random.uniform(0.30, 0.55), 2)
+                ),
                 "alerts_active": 0,
             }
         else:
@@ -360,7 +370,11 @@ class RestAdapter(IProtocolAdapter):
             if data.get("queue_depth", 0) == 0:
                 data["queue_depth"] = random.randint(2, 8)
             if data.get("worker_utilization", 0) == 0:
-                data["worker_utilization"] = real_cpu if real_cpu is not None and real_cpu > 0 else round(random.uniform(0.18, 0.42), 2)
+                data["worker_utilization"] = (
+                    real_cpu
+                    if real_cpu is not None and real_cpu > 0
+                    else round(random.uniform(0.18, 0.42), 2)
+                )
             if real_cpu is not None:
                 data["cpu_utilization"] = real_cpu
             if real_ram is not None:
@@ -377,6 +391,7 @@ class RestAdapter(IProtocolAdapter):
         """Serves Prometheus text-formatted metrics for Grafana / Prometheus scraping."""
         try:
             import psutil
+
             real_cpu = round(psutil.cpu_percent(interval=None) / 100.0, 2)
             real_ram = round(psutil.virtual_memory().percent / 100.0, 2)
         except Exception:
@@ -455,7 +470,7 @@ class WebSocketAdapter(IProtocolAdapter):
             pass
 
     async def handle_connection_after_handshake(
-        self, reader: Any, writer: Any, method: str, path: str, headers: Dict[str, str]
+        self, reader: Any, writer: Any, method: str, path: str, headers: dict[str, str]
     ) -> None:
         try:
             if headers.get("upgrade", "").lower() != "websocket":

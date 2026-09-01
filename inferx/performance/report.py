@@ -1,17 +1,17 @@
 # inferx/performance/report.py
 import json
-from typing import Any, Dict
+from typing import Any
 
 
 class ReportGenerator:
     """Formats performance benchmarking outputs into Markdown, JSON, and styled HTML dashboard pages."""
 
     @staticmethod
-    def generate_json_report(metrics: Dict[str, Any]) -> str:
+    def generate_json_report(metrics: dict[str, Any]) -> str:
         return json.dumps(metrics, indent=2)
 
     @staticmethod
-    def generate_markdown_report(metrics: Dict[str, Any]) -> str:
+    def generate_markdown_report(metrics: dict[str, Any]) -> str:
         """Compiles benchmarking stats into a GitHub markdown table format."""
         lines = [
             "# InferX Performance Benchmark Report",
@@ -35,7 +35,7 @@ class ReportGenerator:
         return "\n".join(lines)
 
     @staticmethod
-    def generate_html_report(metrics: Dict[str, Any]) -> str:
+    def generate_html_report(metrics: dict[str, Any]) -> str:
         """Compiles stats into a beautiful, styled modern HTML dashboard with gradients."""
         html_template = f"""<!DOCTYPE html>
 <html lang="en">
@@ -117,7 +117,7 @@ class ReportGenerator:
     <div class="container">
         <h1>InferX Performance Dashboard</h1>
         <div class="subtitle">Cloud-native AI Inference SLA Benchmarks and Recovery Metrics</div>
-        
+
         <div class="grid">
             <div class="card">
                 <div class="title">Throughput</div>

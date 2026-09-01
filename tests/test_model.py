@@ -8,12 +8,12 @@ hot reloading, and fallback redirects.
 
 import unittest
 
-from inferx.model.interfaces import ModelMetadata
-from inferx.model.registry import ModelRegistry
-from inferx.model.loader import ModelLoader
 from inferx.model.cache import ModelCache
+from inferx.model.interfaces import ModelMetadata
+from inferx.model.loader import ModelLoader
 from inferx.model.manager import ModelRuntimeManager
 from inferx.model.metrics import ModelMetrics
+from inferx.model.registry import ModelRegistry
 
 
 class TestModelRuntime(unittest.IsolatedAsyncioTestCase):

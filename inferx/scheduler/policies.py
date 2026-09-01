@@ -7,10 +7,9 @@ FIFO, Priority Queue, Earliest Deadline First (EDF), Deficit Round Robin (DRR),
 Priority Aging, and Adaptive Schedulers.
 """
 
-from collections import deque
 import heapq
+from collections import deque
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
 
 from inferx.scheduler.interfaces import ISchedulingPolicy, ScheduledRequest
 
@@ -24,7 +23,7 @@ class FIFOPolicy(ISchedulingPolicy):
     def push(self, request: ScheduledRequest) -> None:
         self._queue.append(request)
 
-    def pop(self) -> Optional[ScheduledRequest]:
+    def pop(self) -> ScheduledRequest | None:
         if not self._queue:
             return None
         return self._queue.popleft()
@@ -42,7 +41,7 @@ class PriorityQueuePolicy(ISchedulingPolicy):
     """
 
     def __init__(self) -> None:
-        self._heap: List[Tuple[int, int, int, ScheduledRequest]] = []
+        self._heap: list[tuple[int, int, int, ScheduledRequest]] = []
         self._counter = (
             0  # Prevents heap comparison falling through to ScheduledRequest
         )
@@ -56,7 +55,7 @@ class PriorityQueuePolicy(ISchedulingPolicy):
         )
         self._counter += 1
 
-    def pop(self) -> Optional[ScheduledRequest]:
+    def pop(self) -> ScheduledRequest | None:
         if not self._heap:
             return None
         _, _, _, request = heapq.heappop(self._heap)
@@ -74,7 +73,7 @@ class DeadlinePolicy(ISchedulingPolicy):
     """
 
     def __init__(self) -> None:
-        self._heap: List[Tuple[int, int, int, ScheduledRequest]] = []
+        self._heap: list[tuple[int, int, int, ScheduledRequest]] = []
         self._counter = 0
 
     def push(self, request: ScheduledRequest) -> None:
@@ -84,7 +83,7 @@ class DeadlinePolicy(ISchedulingPolicy):
         )
         self._counter += 1
 
-    def pop(self) -> Optional[ScheduledRequest]:
+    def pop(self) -> ScheduledRequest | None:
         if not self._heap:
             return None
         _, _, _, request = heapq.heappop(self._heap)
@@ -102,18 +101,18 @@ class WeightedFairQueuePolicy(ISchedulingPolicy):
     """
 
     def __init__(
-        self, tenant_weights: Optional[Dict[str, int]] = None, default_weight: int = 1
+        self, tenant_weights: dict[str, int] | None = None, default_weight: int = 1
     ) -> None:
         self.tenant_weights = tenant_weights or {}
         self.default_weight = default_weight
 
         # Deque for each active tenant
-        self._queues: Dict[str, deque[ScheduledRequest]] = {}
+        self._queues: dict[str, deque[ScheduledRequest]] = {}
         # Deficit counter for each active tenant
-        self._deficits: Dict[str, int] = {}
+        self._deficits: dict[str, int] = {}
 
         # Active tenant list for round-robin rotation
-        self._active_tenants: List[str] = []
+        self._active_tenants: list[str] = []
         self._current_index = 0
         self._total_size = 0
 
@@ -127,7 +126,7 @@ class WeightedFairQueuePolicy(ISchedulingPolicy):
         self._queues[tenant_id].append(request)
         self._total_size += 1
 
-    def pop(self) -> Optional[ScheduledRequest]:
+    def pop(self) -> ScheduledRequest | None:
         if self._total_size == 0:
             return None
 
@@ -178,7 +177,7 @@ class PriorityAgingPolicy(ISchedulingPolicy):
 
     def __init__(self, aging_rate_per_sec: float = 1.0) -> None:
         self.aging_rate = aging_rate_per_sec
-        self._heap: List[Tuple[float, int, int, ScheduledRequest]] = []
+        self._heap: list[tuple[float, int, int, ScheduledRequest]] = []
         self._counter = 0
 
     def push(self, request: ScheduledRequest) -> None:
@@ -195,7 +194,7 @@ class PriorityAgingPolicy(ISchedulingPolicy):
         )
         self._counter += 1
 
-    def pop(self) -> Optional[ScheduledRequest]:
+    def pop(self) -> ScheduledRequest | None:
         if not self._heap:
             return None
         _, _, _, request = heapq.heappop(self._heap)
@@ -251,7 +250,7 @@ class AdaptivePolicy(ISchedulingPolicy):
         self.policy.push(request)
         self._adapt_parameters()
 
-    def pop(self) -> Optional[ScheduledRequest]:
+    def pop(self) -> ScheduledRequest | None:
         request = self.policy.pop()
         self._adapt_parameters()
         return request

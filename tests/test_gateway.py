@@ -13,12 +13,12 @@ import unittest
 
 from inferx.admission.limiter import TokenBucketLimiter
 from inferx.admission.manager import AdmissionManager
-from inferx.admission.shedder import BackpressureController, LoadShedder, CircuitBreaker
+from inferx.admission.shedder import BackpressureController, CircuitBreaker, LoadShedder
 from inferx.core.context import RuntimeContext
-from inferx.gateway.router import GatewayRouter
+from inferx.gateway.manager import GatewayManager
 from inferx.gateway.middleware import MiddlewarePipeline
 from inferx.gateway.protocols import RestAdapter, WebSocketAdapter
-from inferx.gateway.manager import GatewayManager
+from inferx.gateway.router import GatewayRouter
 
 
 # Mock prediction function to simulate engine processing

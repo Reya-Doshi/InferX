@@ -6,13 +6,12 @@ Provides utilities to align sequence inputs of varying lengths into uniform
 matrices, reducing padding overhead via shape-based bucketing.
 """
 
-from typing import Dict, List, Tuple
 from inferx.scheduler.interfaces import ScheduledRequest
 
 
 def pad_tensors(
-    requests: List[ScheduledRequest], pad_token: int = 0
-) -> Tuple[List[List[int]], List[int]]:
+    requests: list[ScheduledRequest], pad_token: int = 0
+) -> tuple[list[list[int]], list[int]]:
     """
     Pads 1D integer lists inside request payloads to form a rectangular 2D array.
 
@@ -35,7 +34,7 @@ def pad_tensors(
             # Fallback if payload is not a list (e.g., raw int or single float)
             max_len = max(max_len, 1)
 
-    padded_list: List[List[int]] = []
+    padded_list: list[list[int]] = []
     for req in requests:
         payload = req.payload
         if not isinstance(payload, list):
@@ -58,12 +57,12 @@ class ShapeBucketeer:
     sequences in the same execution batch.
     """
 
-    def __init__(self, thresholds: List[int] = [64, 128, 256, 512]) -> None:
+    def __init__(self, thresholds: list[int] = [64, 128, 256, 512]) -> None:
         self.thresholds = sorted(thresholds)
-        self._buckets: Dict[int, List[ScheduledRequest]] = {
+        self._buckets: dict[int, list[ScheduledRequest]] = {
             t: [] for t in self.thresholds
         }
-        self._overflow_bucket: List[ScheduledRequest] = []
+        self._overflow_bucket: list[ScheduledRequest] = []
 
     def add_request(self, request: ScheduledRequest) -> int:
         """
@@ -83,7 +82,7 @@ class ShapeBucketeer:
         self._overflow_bucket.append(request)
         return -1
 
-    def get_bucket(self, threshold: int) -> List[ScheduledRequest]:
+    def get_bucket(self, threshold: int) -> list[ScheduledRequest]:
         """Returns the contents of a bucket and clears it."""
         if threshold == -1:
             reqs = list(self._overflow_bucket)
@@ -103,6 +102,6 @@ class ShapeBucketeer:
             return len(self._overflow_bucket)
         return len(self._buckets.get(threshold, []))
 
-    def get_active_thresholds(self) -> List[int]:
+    def get_active_thresholds(self) -> list[int]:
         """Returns all configured threshold keys, including -1 representing overflow."""
         return self.thresholds + [-1]

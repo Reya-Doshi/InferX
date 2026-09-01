@@ -8,7 +8,6 @@ Handles request enqueuing, priority popping, and background request aging worker
 
 import asyncio
 from datetime import datetime, timezone
-from typing import Optional
 
 from inferx.scheduler.interfaces import IScheduler, ISchedulingPolicy, ScheduledRequest
 from inferx.scheduler.metrics import SchedulerMetrics
@@ -28,7 +27,7 @@ class Scheduler(IScheduler):
     def __init__(
         self,
         policy: ISchedulingPolicy,
-        metrics: Optional[SchedulerMetrics] = None,
+        metrics: SchedulerMetrics | None = None,
         aging_interval_ms: int = 100,
     ) -> None:
         self.policy = policy
@@ -36,7 +35,7 @@ class Scheduler(IScheduler):
         self.aging_interval_sec = aging_interval_ms / 1000.0
 
         self._cond = asyncio.Condition()
-        self._aging_task: Optional[asyncio.Task[None]] = None
+        self._aging_task: asyncio.Task[None] | None = None
         self._is_active = False
 
     async def start(self) -> None:

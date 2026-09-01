@@ -7,7 +7,7 @@ and the core IBatcher life-cycle interface.
 """
 
 from abc import ABC, abstractmethod
-from typing import List
+
 from pydantic import BaseModel
 
 from inferx.scheduler.interfaces import ScheduledRequest
@@ -21,9 +21,9 @@ class Batch(BaseModel):
     """
 
     batch_id: str
-    requests: List[ScheduledRequest]
-    padded_tensors: List[List[int]]
-    padded_shape: List[int]
+    requests: list[ScheduledRequest]
+    padded_tensors: list[list[int]]
+    padded_shape: list[int]
     max_tokens: int
 
     model_config = {"arbitrary_types_allowed": True}

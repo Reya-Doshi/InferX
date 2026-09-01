@@ -1,6 +1,6 @@
 # inferx/performance/interfaces.py
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any
 
 
 class IBenchmarkRunner(ABC):
@@ -22,7 +22,7 @@ class IBenchmarkRunner(ABC):
         pass
 
     @abstractmethod
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Calculates tail percentiles (P50, P90, P95, P99, P999) and averages."""
         pass
 
@@ -76,14 +76,14 @@ class ILoadGenerator(ABC):
     @abstractmethod
     async def generate_steady_load(
         self, rps: float, duration_sec: float
-    ) -> List[float]:
+    ) -> list[float]:
         """Generates steady rate requests, returning a list of request latencies."""
         pass
 
     @abstractmethod
     async def generate_burst_load(
         self, concurrent_users: int, burst_size: int
-    ) -> List[float]:
+    ) -> list[float]:
         """Simulates rapid user arrivals with large request pools."""
         pass
 
@@ -92,7 +92,7 @@ class IValidationEngine(ABC):
     """Interface for validating SLA targets, failovers, and correctness regressions."""
 
     @abstractmethod
-    def validate_sla(self, metrics: Dict[str, Any], max_p95_ms: float) -> bool:
+    def validate_sla(self, metrics: dict[str, Any], max_p95_ms: float) -> bool:
         """Verifies P95 metrics satisfy target SLA parameters."""
         pass
 

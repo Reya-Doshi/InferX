@@ -3,7 +3,6 @@ import json
 import math
 import os
 import time
-from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 
@@ -20,10 +19,10 @@ class MockTokenizer(ITokenizer):
     Provides BPE-like deterministic tokenization without external vocab files.
     """
 
-    def encode(self, text: str) -> List[int]:
+    def encode(self, text: str) -> list[int]:
         return [ord(char) for char in text]
 
-    def decode(self, tokens: List[int]) -> str:
+    def decode(self, tokens: list[int]) -> str:
         # Filter out invalid ASCII values (like pad or negative indexes)
         valid_tokens = [t for t in tokens if 0 <= t <= 1114111]
         return "".join(chr(t) for t in valid_tokens)
@@ -39,18 +38,91 @@ class LocalMLEngineProvider(IModelInstance):
         self.metadata = metadata
         # 4x16 Weight matrix for local neural layer classification
         self.weights = [
-            [0.15, -0.22, 0.45, 0.12, -0.05, 0.33, 0.18, -0.11, 0.09, 0.21, -0.14, 0.08, 0.19, -0.07, 0.25, 0.02],
-            [-0.10, 0.35, -0.18, 0.28, 0.14, -0.20, 0.05, 0.40, -0.12, 0.04, 0.31, -0.15, 0.08, 0.22, -0.10, 0.18],
-            [0.25, 0.08, -0.30, -0.15, 0.42, 0.11, -0.25, 0.02, 0.38, -0.19, 0.05, 0.27, -0.33, 0.14, 0.06, -0.21],
-            [-0.05, -0.12, 0.10, 0.05, -0.20, 0.09, 0.30, -0.15, -0.08, 0.45, -0.11, 0.03, 0.12, -0.28, 0.35, -0.04],
+            [
+                0.15,
+                -0.22,
+                0.45,
+                0.12,
+                -0.05,
+                0.33,
+                0.18,
+                -0.11,
+                0.09,
+                0.21,
+                -0.14,
+                0.08,
+                0.19,
+                -0.07,
+                0.25,
+                0.02,
+            ],
+            [
+                -0.10,
+                0.35,
+                -0.18,
+                0.28,
+                0.14,
+                -0.20,
+                0.05,
+                0.40,
+                -0.12,
+                0.04,
+                0.31,
+                -0.15,
+                0.08,
+                0.22,
+                -0.10,
+                0.18,
+            ],
+            [
+                0.25,
+                0.08,
+                -0.30,
+                -0.15,
+                0.42,
+                0.11,
+                -0.25,
+                0.02,
+                0.38,
+                -0.19,
+                0.05,
+                0.27,
+                -0.33,
+                0.14,
+                0.06,
+                -0.21,
+            ],
+            [
+                -0.05,
+                -0.12,
+                0.10,
+                0.05,
+                -0.20,
+                0.09,
+                0.30,
+                -0.15,
+                -0.08,
+                0.45,
+                -0.11,
+                0.03,
+                0.12,
+                -0.28,
+                0.35,
+                -0.04,
+            ],
         ]
         self.biases = [0.05, -0.02, 0.08, 0.01]
-        self.classes = ["TECHNICAL_CODE", "QUESTION_QUERY", "ANALYTICAL_STATEMENT", "GENERAL_INPUT"]
+        self.classes = [
+            "TECHNICAL_CODE",
+            "QUESTION_QUERY",
+            "ANALYTICAL_STATEMENT",
+            "GENERAL_INPUT",
+        ]
 
-    async def predict(self, tokens: List[int]) -> List[int]:
+    async def predict(self, tokens: list[int]) -> list[int]:
         """Runs real vector feature extraction, matrix multiplication, and softmax classification."""
         start_t = time.perf_counter()
-        
+
         # 1. Feature extraction: Convert token array into 16-dim feature vector
         features = [0.0] * 16
         if tokens:
@@ -63,12 +135,15 @@ class LocalMLEngineProvider(IModelInstance):
         # 2. Linear Layer Matrix Multiplication: Y = W * X + b
         logits = []
         for i in range(4):
-            dot_product = sum(self.weights[i][j] * features[j] for j in range(16)) + self.biases[i]
+            dot_product = (
+                sum(self.weights[i][j] * features[j] for j in range(16))
+                + self.biases[i]
+            )
             logits.append(dot_product)
 
         # 3. Activation: Softmax probability calculation
         max_logit = max(logits)
-        exp_logits = [math.exp(l - max_logit) for l in logits]
+        exp_logits = [math.exp(logit_val - max_logit) for logit_val in logits]
         sum_exp = sum(exp_logits)
         probs = [round(e / sum_exp, 4) for e in exp_logits]
 
@@ -89,7 +164,7 @@ class LocalMLEngineProvider(IModelInstance):
             "predicted_class": predicted_class,
             "confidence_score": confidence,
             "latency_ms": round(elapsed_ms, 3),
-            "response": f"Local ML Engine classified input '{prompt_str[:30]}...' as [{predicted_class}] with {confidence*100:.1f}% confidence."
+            "response": f"Local ML Engine classified input '{prompt_str[:30]}...' as [{predicted_class}] with {confidence*100:.1f}% confidence.",
         }
 
         # Format output as JSON string ASCII tokens
@@ -111,7 +186,7 @@ class MockModelInstance(IModelInstance):
         self.metadata = metadata
         self.inference_delay_sec = inference_delay_ms / 1000.0
 
-    async def predict(self, tokens: List[int]) -> List[int]:
+    async def predict(self, tokens: list[int]) -> list[int]:
         await asyncio.sleep(self.inference_delay_sec)
         gen_tokens = [95, 111, 117, 116, 112, 117, 116]
         return tokens + gen_tokens
@@ -133,7 +208,7 @@ class GeminiProvider(IModelInstance):
 
         self.client = genai.Client(api_key=self.api_key)
 
-    async def predict(self, tokens: List[int]) -> List[int]:
+    async def predict(self, tokens: list[int]) -> list[int]:
         prompt = "".join(chr(t) for t in tokens if 0 <= t <= 1114111)
 
         try:
@@ -212,7 +287,18 @@ class ModelLoader:
             except ImportError:
                 pass
 
-        if has_genai and os.getenv("GEMINI_API_KEY") and metadata.model_name == "gemini-2.5-flash":
+        if (
+            is_testing
+            or "mock" in metadata.backend_type
+            or "mock" in metadata.model_name
+            or "llama" in metadata.model_name
+        ):
+            instance = MockModelInstance(metadata)
+        elif (
+            has_genai
+            and os.getenv("GEMINI_API_KEY")
+            and metadata.model_name == "gemini-2.5-flash"
+        ):
             instance = GeminiProvider(metadata)
         else:
             instance = LocalMLEngineProvider(metadata)

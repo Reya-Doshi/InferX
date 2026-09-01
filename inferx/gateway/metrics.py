@@ -5,8 +5,8 @@ InferX Gateway Metrics.
 Tracks active connections, latency distributions, and request counts.
 """
 
-from typing import Any
 import threading
+from typing import Any
 
 
 class GatewayMetrics:

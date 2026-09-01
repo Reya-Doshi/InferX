@@ -9,7 +9,7 @@ randomized campaign timers, lease heartbeats, and majority vote consensus.
 import asyncio
 import random
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from inferx.distributed.interfaces import ILeaderElection
 from inferx.distributed.rpc import ClusterRpcClient
@@ -26,10 +26,10 @@ class LeaderElection(ILeaderElection):
     def __init__(
         self,
         node_id: str,
-        peers: List[
-            Dict[str, Any]
+        peers: list[
+            dict[str, Any]
         ],  # peer configurations: [{"node_id": "n1", "host": "127.0.0.1", "port": 9001}, ...]
-        rpc_client: Optional[ClusterRpcClient] = None,
+        rpc_client: ClusterRpcClient | None = None,
         election_min_ms: int = 150,
         election_max_ms: int = 300,
         heartbeat_ms: int = 50,
@@ -45,17 +45,17 @@ class LeaderElection(ILeaderElection):
         # State variables
         self.state = "FOLLOWER"  # FOLLOWER, CANDIDATE, LEADER
         self.current_term = 0
-        self.voted_for: Optional[str] = None
-        self.leader_id: Optional[str] = None
+        self.voted_for: str | None = None
+        self.leader_id: str | None = None
 
         self._last_heartbeat = time.perf_counter()
         self._is_running = False
         self._lock = asyncio.Lock()
 
-        self._election_task: Optional[asyncio.Task[None]] = None
-        self._heartbeat_task: Optional[asyncio.Task[None]] = None
+        self._election_task: asyncio.Task[None] | None = None
+        self._heartbeat_task: asyncio.Task[None] | None = None
 
-    def get_leader(self) -> Optional[str]:
+    def get_leader(self) -> str | None:
         return self.leader_id
 
     async def start(self) -> None:
@@ -82,7 +82,7 @@ class LeaderElection(ILeaderElection):
             self.state = "FOLLOWER"
             self.leader_id = None
 
-    async def handle_request_vote(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def handle_request_vote(self, params: dict[str, Any]) -> dict[str, Any]:
         """RPC Endpoint: Evaluates and votes on candidate campaigns."""
         async with self._lock:
             term = params.get("term", 0)
@@ -109,7 +109,7 @@ class LeaderElection(ILeaderElection):
 
             return {"term": self.current_term, "vote_granted": vote_granted}
 
-    async def handle_heartbeat(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def handle_heartbeat(self, params: dict[str, Any]) -> dict[str, Any]:
         """RPC Endpoint: Resets follower campaign timer lease on Leader heartbeats."""
         async with self._lock:
             term = params.get("term", 0)
@@ -159,7 +159,7 @@ class LeaderElection(ILeaderElection):
         votes = 1  # Self vote
         majority = (len(self.peers) + 1) // 2 + 1
 
-        async def ask_peer_vote(peer: Dict[str, Any]) -> bool:
+        async def ask_peer_vote(peer: dict[str, Any]) -> bool:
             try:
                 res = await self.rpc_client.call(
                     peer["host"],
@@ -207,7 +207,7 @@ class LeaderElection(ILeaderElection):
         while self._is_running and self.state == "LEADER":
             term = self.current_term
 
-            async def send_peer_heartbeat(peer: Dict[str, Any]) -> None:
+            async def send_peer_heartbeat(peer: dict[str, Any]) -> None:
                 try:
                     await self.rpc_client.call(
                         peer["host"],

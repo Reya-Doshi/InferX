@@ -8,7 +8,8 @@ and core scheduling operations.
 
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -50,7 +51,7 @@ class ISchedulingPolicy(ABC):
         pass
 
     @abstractmethod
-    def pop(self) -> Optional[ScheduledRequest]:
+    def pop(self) -> ScheduledRequest | None:
         """Extracts the next request matching the policy's sorting criteria (non-blocking)."""
         pass
 

@@ -10,7 +10,6 @@ import asyncio
 import os
 import random
 import sys
-from typing import Dict
 
 from inferx.batcher.interfaces import Batch
 from inferx.scheduler.interfaces import ScheduledRequest
@@ -111,11 +110,11 @@ class CudaStream:
                             exc_info=True,
                             component="cuda_stream",
                         )
-                        return f"Error: Gemini API failure: {str(e)}".encode("utf-8")
+                        return f"Error: Gemini API failure: {str(e)}".encode()
 
                 # Mock token output result (echo or transform inputs)
                 payload_str = str(request.payload)
-                return f"processed_{payload_str}".encode("utf-8")
+                return f"processed_{payload_str}".encode()
             except asyncio.CancelledError:
                 logger.warning(
                     f"Task {request.request_id} cancelled on CUDA stream {self.stream_id}.",
@@ -135,7 +134,7 @@ class BatchExecutor:
 
     async def execute_batch(
         self, batch: Batch, task_execution_time_ms: float = 5.0
-    ) -> Dict[str, bytes]:
+    ) -> dict[str, bytes]:
         """
         Distributes request tasks across streams round-robin.
 
@@ -163,7 +162,7 @@ class BatchExecutor:
                     component="batch_executor",
                 )
                 # Map failure reasons
-                output_map[req.request_id] = f"error_{str(res)}".encode("utf-8")
+                output_map[req.request_id] = f"error_{str(res)}".encode()
             else:
                 output_map[req.request_id] = res
 

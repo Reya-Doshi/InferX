@@ -9,17 +9,16 @@ and concurrent async producer-consumer loops.
 
 import asyncio
 import unittest
-from typing import List
 
 from inferx.scheduler.interfaces import ScheduledRequest
 from inferx.scheduler.manager import Scheduler
 from inferx.scheduler.policies import (
-    FIFOPolicy,
-    PriorityQueuePolicy,
-    DeadlinePolicy,
-    WeightedFairQueuePolicy,
-    PriorityAgingPolicy,
     AdaptivePolicy,
+    DeadlinePolicy,
+    FIFOPolicy,
+    PriorityAgingPolicy,
+    PriorityQueuePolicy,
+    WeightedFairQueuePolicy,
 )
 
 
@@ -196,7 +195,7 @@ class TestSchedulerPolicies(unittest.IsolatedAsyncioTestCase):
         scheduler = Scheduler(PriorityQueuePolicy())
         await scheduler.start()
 
-        consumed: List[str] = []
+        consumed: list[str] = []
 
         # Spawn multiple concurrent producer tasks
         async def producer(tid: int) -> None:

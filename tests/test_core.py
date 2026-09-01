@@ -11,13 +11,13 @@ import logging
 import os
 import tempfile
 import unittest
-from unittest.mock import AsyncMock
 from typing import Any
+from unittest.mock import AsyncMock
 
 from inferx.core.bootstrap import (
     DIContainer,
-    SingletonProvider,
     FactoryProvider,
+    SingletonProvider,
 )
 from inferx.core.config import AsyncYAMLConfigLoader
 from inferx.core.context import RuntimeContext, RuntimeState

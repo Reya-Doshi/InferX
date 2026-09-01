@@ -6,8 +6,8 @@ Implements telemetry-aware backpressure evaluations, priority-aware load sheddin
 and standard Circuit Breakers.
 """
 
-import time
 import threading
+import time
 
 from inferx.core.context import RuntimeContext
 from inferx.utils.logging import get_logger

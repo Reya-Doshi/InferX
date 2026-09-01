@@ -8,7 +8,8 @@ and RPC communication boundaries.
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -34,7 +35,7 @@ class NodeInfo(BaseModel):
     vram_used: int = Field(default=0, ge=0)
     cpu_utilization: float = Field(default=0.0, ge=0.0, le=1.0)
     gpu_utilization: float = Field(default=0.0, ge=0.0, le=1.0)
-    hosted_models: List[str] = Field(default_factory=list)
+    hosted_models: list[str] = Field(default_factory=list)
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -44,8 +45,8 @@ class IRpcClient(ABC):
 
     @abstractmethod
     async def call(
-        self, host: str, port: int, method: str, params: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, host: str, port: int, method: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         """Dispatches an RPC request to a target remote node."""
         pass
 
@@ -73,6 +74,6 @@ class ILeaderElection(ABC):
         pass
 
     @abstractmethod
-    def get_leader(self) -> Optional[str]:
+    def get_leader(self) -> str | None:
         """Returns the node_id of the current cluster leader, if known."""
         pass

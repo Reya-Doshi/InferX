@@ -1,9 +1,11 @@
 # inferx/deployment/config.py
-import os
+import base64
 import json
 import logging
-import base64
-from typing import Any, Callable, Dict, List
+import os
+from collections.abc import Callable
+from typing import Any
+
 from inferx.deployment.interfaces import IConfigManager
 
 logger = logging.getLogger("inferx.deployment.config")
@@ -13,8 +15,8 @@ class RuntimeConfigurationManager(IConfigManager):
     """Manages system config maps, loading from environment/files and notifying on hot-reloads."""
 
     def __init__(self) -> None:
-        self._config: Dict[str, Any] = {}
-        self._callbacks: Dict[str, List[Callable[[Any], None]]] = {}
+        self._config: dict[str, Any] = {}
+        self._callbacks: dict[str, list[Callable[[Any], None]]] = {}
 
     def get(self, key: str, default: Any = None) -> Any:
         return self._config.get(key, default)
@@ -34,7 +36,7 @@ class RuntimeConfigurationManager(IConfigManager):
                 logger.warning(f"Config file not found: {filepath}")
                 return
 
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = json.load(f)
 
             for key, new_val in data.items():

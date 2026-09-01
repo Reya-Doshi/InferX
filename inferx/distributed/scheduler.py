@@ -6,7 +6,7 @@ Implements load-aware, model-aware, and GPU-aware task scheduling,
 delegating tasks to remote nodes if local queue thresholds are exceeded.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from inferx.distributed.discovery import NodeRegistry
 from inferx.distributed.rpc import ClusterRpcClient
@@ -26,7 +26,7 @@ class DistributedScheduler:
         node_id: str,
         registry: NodeRegistry,
         local_scheduler: Any,  # IScheduler
-        rpc_client: Optional[ClusterRpcClient] = None,
+        rpc_client: ClusterRpcClient | None = None,
         local_queue_threshold: int = 5,
     ) -> None:
         self.node_id = node_id
@@ -105,7 +105,7 @@ class DistributedScheduler:
             )
             return f"local_execution_{self.node_id}"
 
-    async def handle_remote_task(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def handle_remote_task(self, params: dict[str, Any]) -> dict[str, Any]:
         """RPC Endpoint: Receives and enqueues a delegated task from a remote peer."""
         req_id = params.get("request_id", "")
         params.get("tenant_id", "default")

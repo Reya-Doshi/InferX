@@ -7,7 +7,6 @@ and sticky sessions hashes.
 """
 
 import hashlib
-from typing import Dict, Optional
 
 from inferx.distributed.discovery import NodeRegistry
 from inferx.distributed.interfaces import NodeInfo
@@ -21,14 +20,12 @@ class DistributedRouter:
     def __init__(
         self,
         registry: NodeRegistry,
-        tenant_affinity: Optional[
-            Dict[str, str]
-        ] = None,  # tenant_id -> node_id overrides
+        tenant_affinity: dict[str, str] | None = None,  # tenant_id -> node_id overrides
     ) -> None:
         self.registry = registry
         self.tenant_affinity = tenant_affinity or {}
 
-    def get_route(self, tenant_id: str, model_name: str) -> Optional[NodeInfo]:
+    def get_route(self, tenant_id: str, model_name: str) -> NodeInfo | None:
         """
         Determines the target node for a request.
 

@@ -8,11 +8,10 @@ Verifies compliance with the <100 microsecond performance target.
 
 import asyncio
 import time
-from typing import List
 
 from inferx.admission.limiter import TokenBucketLimiter
 from inferx.admission.manager import AdmissionManager
-from inferx.admission.shedder import BackpressureController, LoadShedder, CircuitBreaker
+from inferx.admission.shedder import BackpressureController, CircuitBreaker, LoadShedder
 from inferx.core.context import RuntimeContext
 from inferx.scheduler.interfaces import ScheduledRequest
 from inferx.utils.logging import configure_logging, get_logger
@@ -60,7 +59,7 @@ async def run_admission_benchmark(count: int = 100000) -> None:
 
     start_time = time.perf_counter()
 
-    latencies: List[float] = []
+    latencies: list[float] = []
 
     # Run sequential decisions to isolate microsecond measurements
     for req in requests:

@@ -1,6 +1,7 @@
 # inferx/deployment/interfaces.py
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict
+from collections.abc import Callable
+from typing import Any
 
 
 class IConfigManager(ABC):
@@ -58,6 +59,6 @@ class IDeploymentController(ABC):
         pass
 
     @abstractmethod
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Returns current instances list, versions, and controller states."""
         pass

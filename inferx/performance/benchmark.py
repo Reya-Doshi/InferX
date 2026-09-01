@@ -1,7 +1,8 @@
 # inferx/performance/benchmark.py
 import math
 import time
-from typing import Any, Dict, List
+from typing import Any
+
 from inferx.performance.interfaces import IBenchmarkRunner
 
 
@@ -9,13 +10,13 @@ class BenchmarkRunner(IBenchmarkRunner):
     """Calculates tail latency percentiles (P50, P90, P95, P99, P999), throughput, and CPU/Memory/GPU metrics."""
 
     def __init__(self) -> None:
-        self.latencies: List[float] = []
-        self.timestamps: List[float] = []
-        self.cpus: List[float] = []
-        self.memories: List[float] = []
-        self.gpus: List[float] = []
-        self.batch_sizes: List[int] = []
-        self.queue_delays: List[float] = []
+        self.latencies: list[float] = []
+        self.timestamps: list[float] = []
+        self.cpus: list[float] = []
+        self.memories: list[float] = []
+        self.gpus: list[float] = []
+        self.batch_sizes: list[int] = []
+        self.queue_delays: list[float] = []
 
     def record_latency(self, latency_ms: float) -> None:
         self.latencies.append(latency_ms)
@@ -30,7 +31,7 @@ class BenchmarkRunner(IBenchmarkRunner):
         self.batch_sizes.append(batch_size)
         self.queue_delays.append(queue_delay_ms)
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Performs percentile computations and gathers resource averages."""
         if not self.latencies:
             return {

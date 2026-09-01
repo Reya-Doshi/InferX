@@ -2,7 +2,8 @@
 import asyncio
 import logging
 import uuid
-from typing import Any, Dict, List
+from typing import Any
+
 from inferx.deployment.interfaces import IDeploymentController
 
 logger = logging.getLogger("inferx.deployment.controller")
@@ -16,7 +17,7 @@ class DeploymentController(IDeploymentController):
     ) -> None:
         self.version = initial_version
         self.replicas = initial_replicas
-        self.instances: List[Dict[str, Any]] = []
+        self.instances: list[dict[str, Any]] = []
         self._state = "STABLE"
         self._canary_weight = 0
 
@@ -30,7 +31,7 @@ class DeploymentController(IDeploymentController):
                 }
             )
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         return {
             "state": self._state,
             "version": self.version,

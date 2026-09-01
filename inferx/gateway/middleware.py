@@ -7,7 +7,6 @@ tracing contexts, and Admission Controller routing filters.
 """
 
 import uuid
-from typing import Dict, List, Optional
 
 from inferx.admission.manager import AdmissionManager
 from inferx.gateway.interfaces import GatewayRequestContext
@@ -36,7 +35,7 @@ class MiddlewarePipeline:
     def __init__(
         self,
         admission_manager: AdmissionManager,
-        allowed_api_keys: Optional[List[str]] = None,
+        allowed_api_keys: list[str] | None = None,
         max_request_size_bytes: int = 128 * 1024,  # 128 KB limit
     ) -> None:
         self.admission_manager = admission_manager
@@ -44,7 +43,7 @@ class MiddlewarePipeline:
         self.max_request_size_bytes = max_request_size_bytes
 
     async def execute(
-        self, request_id: str, headers: Dict[str, str], payload: str
+        self, request_id: str, headers: dict[str, str], payload: str
     ) -> GatewayRequestContext:
         """
         Runs the request through the middleware stack.

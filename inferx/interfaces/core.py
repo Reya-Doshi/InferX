@@ -7,7 +7,8 @@ These contracts guarantee loose coupling and enable mock injection during testin
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Coroutine, Type, TypeVar
+from collections.abc import Callable, Coroutine
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -89,11 +90,11 @@ class IDIContainer(ABC):
     """Dependency injection container interface supporting providers."""
 
     @abstractmethod
-    def register(self, interface: Type[T], provider: Any) -> None:
+    def register(self, interface: type[T], provider: Any) -> None:
         """Binds a provider to an interface type."""
         pass
 
     @abstractmethod
-    def resolve(self, interface: Type[T]) -> T:
+    def resolve(self, interface: type[T]) -> T:
         """Resolves the instance bound to the requested interface."""
         pass

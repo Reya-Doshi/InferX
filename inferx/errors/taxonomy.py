@@ -6,8 +6,6 @@ Defines the system-wide base exception class and concrete domain-specific errors
 to ensure uniform error handling, telemetry tracking, and API status mapping.
 """
 
-from typing import Optional
-
 
 class InferXError(Exception):
     """
@@ -21,7 +19,7 @@ class InferXError(Exception):
         self,
         code: str,
         message: str,
-        cause: Optional[str] = None,
+        cause: str | None = None,
         retryable: bool = False,
         severity: str = "ERROR",
     ) -> None:
@@ -48,7 +46,7 @@ class InferXError(Exception):
 class ConfigurationError(InferXError):
     """Raised when configuration parsing or validation boundaries are violated."""
 
-    def __init__(self, message: str, cause: Optional[str] = None) -> None:
+    def __init__(self, message: str, cause: str | None = None) -> None:
         super().__init__(
             code="ERR_SYS_CONFIG",
             message=message,
@@ -61,7 +59,7 @@ class ConfigurationError(InferXError):
 class ValidationError(InferXError):
     """Raised when request payload schemas, sizes, or parameters are invalid."""
 
-    def __init__(self, message: str, cause: Optional[str] = None) -> None:
+    def __init__(self, message: str, cause: str | None = None) -> None:
         super().__init__(
             code="ERR_VAL_INVALID_INPUT",
             message=message,
@@ -74,7 +72,7 @@ class ValidationError(InferXError):
 class DependencyInjectionError(InferXError):
     """Raised when the DI container fails to resolve or bind a component interface."""
 
-    def __init__(self, message: str, cause: Optional[str] = None) -> None:
+    def __init__(self, message: str, cause: str | None = None) -> None:
         super().__init__(
             code="ERR_SYS_DI",
             message=message,
@@ -88,7 +86,7 @@ class HardwareError(InferXError):
     """Raised when hardware drivers, CUDA contexts, or NVML calls fail."""
 
     def __init__(
-        self, message: str, cause: Optional[str] = None, retryable: bool = True
+        self, message: str, cause: str | None = None, retryable: bool = True
     ) -> None:
         super().__init__(
             code="ERR_HW_FAILURE",
@@ -103,7 +101,7 @@ class WorkerError(InferXError):
     """Raised when worker subprocesses crash, fail heartbeats, or fail to start."""
 
     def __init__(
-        self, message: str, cause: Optional[str] = None, retryable: bool = True
+        self, message: str, cause: str | None = None, retryable: bool = True
     ) -> None:
         super().__init__(
             code="ERR_WORKER_FAILURE",
@@ -117,7 +115,7 @@ class WorkerError(InferXError):
 class SystemTimeoutError(InferXError):
     """Raised when queues, execution cycles, or worker calls exceed allotted TTL limits."""
 
-    def __init__(self, message: str, cause: Optional[str] = None) -> None:
+    def __init__(self, message: str, cause: str | None = None) -> None:
         super().__init__(
             code="ERR_SYS_TIMEOUT",
             message=message,
@@ -130,7 +128,7 @@ class SystemTimeoutError(InferXError):
 class ResourceExhaustedError(InferXError):
     """Raised when the runtime is overloaded (VRAM limits exceeded or queue is full)."""
 
-    def __init__(self, message: str, cause: Optional[str] = None) -> None:
+    def __init__(self, message: str, cause: str | None = None) -> None:
         super().__init__(
             code="ERR_AC_RESOURCE_EXHAUSTED",
             message=message,
@@ -143,7 +141,7 @@ class ResourceExhaustedError(InferXError):
 class StateTransitionError(InferXError):
     """Raised when an illegal transition is requested on the RuntimeState model."""
 
-    def __init__(self, message: str, cause: Optional[str] = None) -> None:
+    def __init__(self, message: str, cause: str | None = None) -> None:
         super().__init__(
             code="ERR_STATE_TRANSITION",
             message=message,

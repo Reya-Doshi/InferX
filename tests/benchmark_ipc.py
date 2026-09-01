@@ -6,11 +6,11 @@ Compares standard multiprocessing.Queue payload serialization transfer times
 versus our SharedMemoryPool zero-copy transfer times across process boundaries.
 """
 
-import time
 import multiprocessing
+import time
 
-from inferx.worker.ipc import SharedMemoryPool
 from inferx.utils.logging import configure_logging, get_logger
+from inferx.worker.ipc import SharedMemoryPool
 
 configure_logging("INFO")
 logger = get_logger("benchmark")

@@ -5,8 +5,8 @@ InferX Worker Metrics.
 Tracks worker process lifetimes, telemetry checks, VRAM levels, and execution durations.
 """
 
-from typing import Any, Dict
 import threading
+from typing import Any
 
 
 class WorkerMetrics:
@@ -19,7 +19,7 @@ class WorkerMetrics:
         self._restarts = 0
         self._executions_count = 0
         self._total_execution_time_ns = 0
-        self._last_heartbeat_delays: Dict[str, float] = {}
+        self._last_heartbeat_delays: dict[str, float] = {}
 
     def record_restart(self) -> None:
         """Increments restart counter."""

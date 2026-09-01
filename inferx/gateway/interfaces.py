@@ -7,7 +7,8 @@ and middleware boundaries.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Tuple
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -42,6 +43,6 @@ class IGatewayRouter(ABC):
     """Abstract interface defining dynamic request target routing controllers."""
 
     @abstractmethod
-    def route(self, context: GatewayRequestContext) -> Tuple[str, str]:
+    def route(self, context: GatewayRequestContext) -> tuple[str, str]:
         """Resolves target model and version configurations for a request context."""
         pass

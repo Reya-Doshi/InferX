@@ -7,7 +7,8 @@ and health/alert interfaces.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -18,11 +19,11 @@ class SpanData(BaseModel):
 
     span_id: str
     trace_id: str
-    parent_span_id: Optional[str] = None
+    parent_span_id: str | None = None
     name: str
     start_time_ns: int
     end_time_ns: int
-    attributes: Dict[str, Any] = Field(default_factory=dict)
+    attributes: dict[str, Any] = Field(default_factory=dict)
 
     model_config = {"frozen": True}
 
@@ -31,7 +32,7 @@ class ITracer(ABC):
     """Interface representing the distributed tracing context coordinator."""
 
     @abstractmethod
-    def span(self, name: str, attributes: Optional[Dict[str, Any]] = None) -> Any:
+    def span(self, name: str, attributes: dict[str, Any] | None = None) -> Any:
         """Creates and returns an async context manager representing a trace span."""
         pass
 
@@ -41,14 +42,14 @@ class IMetricsRegistry(ABC):
 
     @abstractmethod
     def counter(
-        self, name: str, description: str, labels: Optional[Dict[str, str]] = None
+        self, name: str, description: str, labels: dict[str, str] | None = None
     ) -> Any:
         """Retrieves or registers a Counter metric."""
         pass
 
     @abstractmethod
     def gauge(
-        self, name: str, description: str, labels: Optional[Dict[str, str]] = None
+        self, name: str, description: str, labels: dict[str, str] | None = None
     ) -> Any:
         """Retrieves or registers a Gauge metric."""
         pass
@@ -58,8 +59,8 @@ class IMetricsRegistry(ABC):
         self,
         name: str,
         description: str,
-        buckets: List[float],
-        labels: Optional[Dict[str, str]] = None,
+        buckets: list[float],
+        labels: dict[str, str] | None = None,
     ) -> Any:
         """Retrieves or registers a Histogram metric."""
         pass

@@ -6,11 +6,11 @@ Configures the standard library logging pipeline to output structured JSON strin
 automatically harvesting contextual telemetry parameters from Task/Thread-local ContextVars.
 """
 
-from datetime import datetime, timezone
+import contextvars
 import json
 import logging
 import sys
-import contextvars
+from datetime import datetime, timezone
 from typing import Any
 
 # ContextVar storing telemetry metadata (e.g. trace_id, request_id, model_name)

@@ -2,7 +2,7 @@
 import threading
 import time
 import tracemalloc
-from typing import Any, Dict
+from typing import Any
 
 
 class RuntimeProfiler:
@@ -20,7 +20,7 @@ class RuntimeProfiler:
         self._cpu_start = time.process_time()
         tracemalloc.start()
 
-    def stop(self) -> Dict[str, Any]:
+    def stop(self) -> dict[str, Any]:
         """Stops allocation tracing and compiles execution profiling metrics."""
         elapsed = max(0.001, time.perf_counter() - self._start_time)
         cpu_time = time.process_time() - self._cpu_start

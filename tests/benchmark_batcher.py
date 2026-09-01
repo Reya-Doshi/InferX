@@ -7,13 +7,12 @@ achieved by implementing Shape Bucketing.
 """
 
 import asyncio
-import time
 import random
-from typing import List
+import time
 
 from inferx.batcher.engine import StaticBatcher
 from inferx.batcher.interfaces import Batch, IBatchHandler
-from inferx.batcher.padding import pad_tensors, ShapeBucketeer
+from inferx.batcher.padding import ShapeBucketeer, pad_tensors
 from inferx.scheduler.interfaces import ScheduledRequest
 from inferx.scheduler.manager import Scheduler
 from inferx.scheduler.policies import FIFOPolicy
@@ -45,7 +44,7 @@ async def run_benchmark(count: int = 5000) -> None:
 
     # 1. Pre-generate requests of varying sequence lengths (10 to 500 tokens)
     random.seed(42)
-    requests: List[ScheduledRequest] = []
+    requests: list[ScheduledRequest] = []
     for i in range(count):
         length = random.choice([16, 32, 64, 128, 256, 384, 512])
         tokens = [random.randint(1, 1000) for _ in range(length)]

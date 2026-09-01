@@ -9,10 +9,10 @@ and concurrency safety.
 import asyncio
 import unittest
 
-from inferx.admission.limiter import TokenBucketLimiter, LeakyBucketLimiter
+from inferx.admission.limiter import LeakyBucketLimiter, TokenBucketLimiter
 from inferx.admission.manager import AdmissionManager
 from inferx.admission.metrics import AdmissionMetrics
-from inferx.admission.shedder import BackpressureController, LoadShedder, CircuitBreaker
+from inferx.admission.shedder import BackpressureController, CircuitBreaker, LoadShedder
 from inferx.core.context import RuntimeContext
 from inferx.scheduler.interfaces import ScheduledRequest
 from inferx.scheduler.manager import Scheduler

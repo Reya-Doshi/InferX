@@ -6,8 +6,9 @@ Evaluates metric telemetry snapshots against registered alert rules,
 triggering alerts and logging warnings for operators.
 """
 
-from typing import Any, Callable, Dict, List, Tuple
 import threading
+from collections.abc import Callable
+from typing import Any
 
 from inferx.utils.logging import get_logger
 
@@ -21,7 +22,7 @@ class AlertRule:
         self,
         name: str,
         threshold: float,
-        check_fn: Callable[[Dict[str, Any]], Tuple[bool, str]],
+        check_fn: Callable[[dict[str, Any]], tuple[bool, str]],
     ) -> None:
         self.name = name
         self.threshold = threshold
@@ -34,18 +35,18 @@ class AlertManager:
     """
 
     def __init__(self) -> None:
-        self._rules: Dict[str, AlertRule] = {}
-        self._triggered_alerts: Dict[str, float] = (
+        self._rules: dict[str, AlertRule] = {}
+        self._triggered_alerts: dict[str, float] = (
             {}
         )  # Maps alert_name -> last_trigger_timestamp
-        self._handlers: List[Callable[[str, str], None]] = []
+        self._handlers: list[Callable[[str, str], None]] = []
         self._lock = threading.Lock()
 
     def add_rule(
         self,
         name: str,
         threshold: float,
-        check_fn: Callable[[Dict[str, Any]], Tuple[bool, str]],
+        check_fn: Callable[[dict[str, Any]], tuple[bool, str]],
     ) -> None:
         """Registers a threshold rule check."""
         with self._lock:
@@ -60,7 +61,7 @@ class AlertManager:
         with self._lock:
             self._handlers.append(handler)
 
-    def evaluate_rules(self, metrics_snapshot: Dict[str, Any]) -> List[str]:
+    def evaluate_rules(self, metrics_snapshot: dict[str, Any]) -> list[str]:
         """
         Evaluates metrics snapshot values against registered rules.
 

@@ -6,7 +6,9 @@ Monitors hardware telemetry (CPU, GPU, RAM) and generates detailed subsystem hea
 """
 
 import asyncio
-from typing import Any, Callable, Coroutine, Optional
+from collections.abc import Callable, Coroutine
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from inferx.interfaces.core import IHealthManager
@@ -67,7 +69,7 @@ class HealthManager(IHealthManager):
             "models": {},
         }
 
-        self._last_report: Optional[HealthReport] = None
+        self._last_report: HealthReport | None = None
         self._nvml_initialized = False
         self._initialize_nvml()
 
@@ -155,7 +157,7 @@ class HealthManager(IHealthManager):
         self._last_report = report
         return report
 
-    def get_last_status(self) -> Optional[HealthReport]:
+    def get_last_status(self) -> HealthReport | None:
         """Returns the most recent HealthReport snapshot."""
         return self._last_report
 

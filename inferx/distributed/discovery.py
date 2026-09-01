@@ -9,7 +9,7 @@ live nodes and detect failures.
 import asyncio
 import random
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from inferx.distributed.interfaces import NodeInfo, NodeStatus
 from inferx.distributed.rpc import ClusterRpcClient
@@ -24,8 +24,8 @@ class NodeRegistry:
     """
 
     def __init__(self) -> None:
-        self._nodes: Dict[str, NodeInfo] = {}
-        self._last_update: Dict[str, float] = {}
+        self._nodes: dict[str, NodeInfo] = {}
+        self._last_update: dict[str, float] = {}
         self._lock = threading_lock()
 
     def register_node(self, node: NodeInfo) -> None:
@@ -44,18 +44,18 @@ class NodeRegistry:
             self._nodes.pop(node_id, None)
             self._last_update.pop(node_id, None)
 
-    def get_node(self, node_id: str) -> Optional[NodeInfo]:
+    def get_node(self, node_id: str) -> NodeInfo | None:
         with self._lock:
             return self._nodes.get(node_id)
 
-    def get_active_nodes(self) -> List[NodeInfo]:
+    def get_active_nodes(self) -> list[NodeInfo]:
         """Returns all nodes not in the DOWN status."""
         with self._lock:
             return [
                 node for node in self._nodes.values() if node.status != NodeStatus.DOWN
             ]
 
-    def get_all_nodes(self) -> List[NodeInfo]:
+    def get_all_nodes(self) -> list[NodeInfo]:
         with self._lock:
             return list(self._nodes.values())
 
@@ -64,7 +64,7 @@ class NodeRegistry:
         with self._lock:
             self._last_update[node_id] = time.perf_counter()
 
-    def check_failures(self, timeout_sec: float) -> List[str]:
+    def check_failures(self, timeout_sec: float) -> list[str]:
         """
         Scans nodes and marks them DOWN if they exceed the timeout.
 
@@ -97,7 +97,7 @@ class Membership:
         self,
         node_id: str,
         registry: NodeRegistry,
-        rpc_client: Optional[ClusterRpcClient] = None,
+        rpc_client: ClusterRpcClient | None = None,
         heartbeat_interval_sec: float = 0.5,
         failure_timeout_sec: float = 2.0,
     ) -> None:
@@ -111,8 +111,8 @@ class Membership:
         self._is_active = False
         self._lock = asyncio.Lock()
 
-        self._gossip_task: Optional[asyncio.Task[None]] = None
-        self._failure_task: Optional[asyncio.Task[None]] = None
+        self._gossip_task: asyncio.Task[None] | None = None
+        self._failure_task: asyncio.Task[None] | None = None
 
     async def start(self) -> None:
         """Starts Gossip heartbeats and failure detector loops."""
@@ -136,7 +136,7 @@ class Membership:
                 self._failure_task.cancel()
                 self._failure_task = None
 
-    async def handle_ping(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def handle_ping(self, params: dict[str, Any]) -> dict[str, Any]:
         """RPC Endpoint: Receives node gossip update and resets failure timer."""
         node_data = params.get("node_info", {})
         if node_data:

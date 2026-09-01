@@ -7,12 +7,11 @@ gatekeeper pipeline, registering metrics and return verdicts.
 """
 
 import time
-from typing import Optional
 
 from inferx.admission.interfaces import AdmissionVerdict, IAdmissionController
 from inferx.admission.limiter import TokenBucketLimiter
 from inferx.admission.metrics import AdmissionMetrics
-from inferx.admission.shedder import LoadShedder, CircuitBreaker
+from inferx.admission.shedder import CircuitBreaker, LoadShedder
 from inferx.core.context import RuntimeContext
 from inferx.scheduler.interfaces import IScheduler, ScheduledRequest
 
@@ -31,8 +30,8 @@ class AdmissionManager(IAdmissionController):
         limiter: TokenBucketLimiter,
         shedder: LoadShedder,
         circuit_breaker: CircuitBreaker,
-        metrics: Optional[AdmissionMetrics] = None,
-        scheduler: Optional[IScheduler] = None,
+        metrics: AdmissionMetrics | None = None,
+        scheduler: IScheduler | None = None,
     ) -> None:
         self.context = context
         self.limiter = limiter

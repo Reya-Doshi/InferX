@@ -6,8 +6,6 @@ Tracks model metadata configurations, handles version alias resolution,
 and manages fallback paths if loading fails.
 """
 
-from typing import Dict, Optional, Tuple
-
 from inferx.model.interfaces import ModelMetadata
 from inferx.utils.logging import get_logger
 
@@ -21,9 +19,9 @@ class ModelRegistry:
 
     def __init__(self) -> None:
         # Maps (model_name, version) -> ModelMetadata
-        self._models: Dict[Tuple[str, str], ModelMetadata] = {}
+        self._models: dict[tuple[str, str], ModelMetadata] = {}
         # Maps model_name -> version_alias -> version
-        self._aliases: Dict[str, Dict[str, str]] = {}
+        self._aliases: dict[str, dict[str, str]] = {}
 
     def register_model(self, metadata: ModelMetadata) -> None:
         """Registers a model metadata config."""
@@ -84,7 +82,7 @@ class ModelRegistry:
         # 3. Otherwise treat as concrete version
         return version_or_alias
 
-    def get_fallback(self, name: str, version: str) -> Optional[Tuple[str, str]]:
+    def get_fallback(self, name: str, version: str) -> tuple[str, str] | None:
         """Returns the configured fallback model name and version, if registered."""
         try:
             metadata = self.get_model_metadata(name, version)

@@ -1,6 +1,7 @@
 # inferx/performance/validation.py
 import logging
-from typing import Any, Dict
+from typing import Any
+
 from inferx.performance.interfaces import IValidationEngine
 
 logger = logging.getLogger("inferx.performance.validation")
@@ -9,7 +10,7 @@ logger = logging.getLogger("inferx.performance.validation")
 class ValidationEngine(IValidationEngine):
     """Evaluates benchmark parameters against SLA limits, checking latency percentiles and correctness validations."""
 
-    def validate_sla(self, metrics: Dict[str, Any], max_p95_ms: float) -> bool:
+    def validate_sla(self, metrics: dict[str, Any], max_p95_ms: float) -> bool:
         """Verifies that P95 tail latency satisfies SLA limits."""
         p95 = metrics.get("p95", 0.0)
         if p95 > max_p95_ms:
@@ -37,7 +38,7 @@ class ValidationEngine(IValidationEngine):
         )
         return True
 
-    def validate_throughput(self, metrics: Dict[str, Any], min_rps: float) -> bool:
+    def validate_throughput(self, metrics: dict[str, Any], min_rps: float) -> bool:
         throughput = metrics.get("throughput_rps", 0.0)
         if throughput < min_rps:
             logger.error(

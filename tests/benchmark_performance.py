@@ -1,11 +1,12 @@
 # tests/benchmark_performance.py
 import asyncio
 import random
+
 from inferx.performance.benchmark import BenchmarkRunner
 from inferx.performance.load import LoadGenerator
 from inferx.performance.profiler import RuntimeProfiler
-from inferx.performance.validation import ValidationEngine
 from inferx.performance.report import ReportGenerator
+from inferx.performance.validation import ValidationEngine
 
 
 async def run_performance_engineering_validation() -> None:

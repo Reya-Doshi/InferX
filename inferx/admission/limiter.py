@@ -6,9 +6,8 @@ Implements sub-microsecond Token Bucket and Leaky Bucket algorithms
 with per-tenant isolation locks.
 """
 
-import time
 import threading
-from typing import Dict, Optional
+import time
 
 
 class BucketState:
@@ -34,13 +33,13 @@ class TokenBucketLimiter:
         self,
         global_capacity: float,
         global_refill_rate: float,
-        tenant_configs: Optional[Dict[str, tuple[float, float]]] = None,
+        tenant_configs: dict[str, tuple[float, float]] | None = None,
     ) -> None:
         self.global_capacity = global_capacity
         self.global_refill_rate = global_refill_rate
         self.tenant_configs = tenant_configs or {}
 
-        self._states: Dict[str, BucketState] = {}
+        self._states: dict[str, BucketState] = {}
         self._map_lock = threading.Lock()
 
     def consume(self, tenant_id: str) -> bool:

@@ -7,13 +7,16 @@ Supports async file reading, environment variable overrides, and dynamic reload 
 """
 
 import asyncio
-from typing import Any, Optional
 import os
+from typing import Any
+
 import yaml
 from pydantic import (
     BaseModel,
     Field,
     model_validator,
+)
+from pydantic import (
     ValidationError as PydanticValidationError,
 )
 
@@ -90,7 +93,7 @@ class AsyncYAMLConfigLoader(IConfigLoader):
 
     def __init__(self, config_path: str) -> None:
         self.config_path = config_path
-        self._active_config: Optional[RuntimeConfig] = None
+        self._active_config: RuntimeConfig | None = None
         self._lock = asyncio.Lock()
 
     async def load(self) -> RuntimeConfig:
@@ -106,7 +109,7 @@ class AsyncYAMLConfigLoader(IConfigLoader):
             try:
 
                 def read_file() -> str:
-                    with open(self.config_path, "r") as f:
+                    with open(self.config_path) as f:
                         return f.read()
 
                 content = await asyncio.to_thread(read_file)

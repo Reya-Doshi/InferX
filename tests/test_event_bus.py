@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from inferx.event_bus.bus import EventBus
 from inferx.event_bus.dlq import DeadLetterQueue
 from inferx.event_bus.envelope import EventEnvelope
-from inferx.event_bus.events import RequestReceived, BatchCreated, WorkerFailed
+from inferx.event_bus.events import BatchCreated, RequestReceived, WorkerFailed
 
 
 class TestEventBus(unittest.IsolatedAsyncioTestCase):

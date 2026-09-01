@@ -6,7 +6,6 @@ Instruments counters and gauges tracking message throughput, delivery rates,
 and queue bottlenecks.
 """
 
-from typing import Dict
 import threading
 
 
@@ -19,10 +18,10 @@ class EventBusMetrics:
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._published_counts: Dict[str, int] = {}
-        self._delivered_counts: Dict[str, int] = {}
-        self._failed_counts: Dict[str, int] = {}
-        self._queue_depths: Dict[str, int] = {}
+        self._published_counts: dict[str, int] = {}
+        self._delivered_counts: dict[str, int] = {}
+        self._failed_counts: dict[str, int] = {}
+        self._queue_depths: dict[str, int] = {}
 
     def record_publish(self, event_type: str) -> None:
         """Increments event publish counter."""

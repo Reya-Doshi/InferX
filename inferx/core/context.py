@@ -7,9 +7,10 @@ and telemetry statistics.
 """
 
 import asyncio
-from enum import Enum
 import threading
-from typing import Any, Callable, Coroutine
+from collections.abc import Callable, Coroutine
+from enum import Enum
+from typing import Any
 
 from inferx.errors.taxonomy import StateTransitionError
 from inferx.utils.logging import get_logger, telemetry_context

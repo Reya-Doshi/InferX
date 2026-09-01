@@ -6,9 +6,10 @@ Defines the EventEnvelope metadata structure encapsulating tracing, priorities,
 and correlation identifiers for asynchronous event routing.
 """
 
-from datetime import datetime, timezone
 import uuid
-from typing import Any, Optional
+from datetime import datetime, timezone
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from inferx.utils.logging import telemetry_context
@@ -27,11 +28,11 @@ class EventEnvelope(BaseModel):
     timestamp_ns: int = Field(
         default_factory=lambda: int(datetime.now(timezone.utc).timestamp() * 1e9)
     )
-    trace_id: Optional[str] = None
-    span_id: Optional[str] = None
-    request_id: Optional[str] = None
-    correlation_id: Optional[str] = None
-    tenant_id: Optional[str] = None
+    trace_id: str | None = None
+    span_id: str | None = None
+    request_id: str | None = None
+    correlation_id: str | None = None
+    tenant_id: str | None = None
     priority: int = Field(default=0, ge=0)
     payload: Any
 
@@ -39,7 +40,7 @@ class EventEnvelope(BaseModel):
 
     @classmethod
     def create_from_payload(
-        cls, payload: Any, priority: int = 0, event_type: Optional[str] = None
+        cls, payload: Any, priority: int = 0, event_type: str | None = None
     ) -> "EventEnvelope":
         """
         Constructs an EventEnvelope from a typed payload.

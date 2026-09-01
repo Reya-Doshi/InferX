@@ -6,18 +6,17 @@ Measures REST predict request throughput (requests/sec) and average latencies.
 """
 
 import asyncio
-import time
 import json
-from typing import List
+import time
 
 from inferx.admission.limiter import TokenBucketLimiter
 from inferx.admission.manager import AdmissionManager
-from inferx.admission.shedder import BackpressureController, LoadShedder, CircuitBreaker
+from inferx.admission.shedder import BackpressureController, CircuitBreaker, LoadShedder
 from inferx.core.context import RuntimeContext
-from inferx.gateway.router import GatewayRouter
+from inferx.gateway.manager import GatewayManager
 from inferx.gateway.middleware import MiddlewarePipeline
 from inferx.gateway.protocols import RestAdapter
-from inferx.gateway.manager import GatewayManager
+from inferx.gateway.router import GatewayRouter
 from inferx.utils.logging import configure_logging, get_logger
 
 configure_logging("INFO")
@@ -29,7 +28,7 @@ async def mock_predict(model_name: str, version: str, prompt: str) -> str:
     return "ok"
 
 
-async def client_worker(host: str, port: int, count: int, payload: str) -> List[float]:
+async def client_worker(host: str, port: int, count: int, payload: str) -> list[float]:
     """Client task sending requests sequentially over TCP connections."""
     latencies = []
 
@@ -127,6 +126,5 @@ async def run_gateway_benchmark(
 
 if __name__ == "__main__":
     # Import List dynamically to avoid namespace clashes
-    from typing import List
 
     asyncio.run(run_gateway_benchmark(15, 200))

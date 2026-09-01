@@ -7,7 +7,7 @@ persisting, and handling dead letter event flows.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -75,7 +75,7 @@ class IDeadLetterQueue(ABC):
 
     @abstractmethod
     async def route_to_dlq(
-        self, envelope: Any, reason: str, exception: Optional[Exception] = None
+        self, envelope: Any, reason: str, exception: Exception | None = None
     ) -> None:
         """
         Routes a failed event envelope to the dead letter log, capturing trace contexts.

@@ -9,7 +9,8 @@ simulating secure node-to-node authentication tokens (mTLS).
 import asyncio
 import json
 import uuid
-from typing import Any, Callable, Coroutine, Dict, Optional
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 from inferx.distributed.interfaces import IRpcClient, IRpcServer
 from inferx.utils.logging import get_logger
@@ -28,17 +29,17 @@ class ClusterRpcServer(IRpcServer):
         self.host = host
         self.port = port
         self.security_token = security_token
-        self._server: Optional[asyncio.AbstractServer] = None
+        self._server: asyncio.AbstractServer | None = None
         # Maps method_name -> handler coroutine
-        self._handlers: Dict[
-            str, Callable[[Dict[str, Any]], Coroutine[Any, Any, Dict[str, Any]]]
+        self._handlers: dict[
+            str, Callable[[dict[str, Any]], Coroutine[Any, Any, dict[str, Any]]]
         ] = {}
         self._is_active = False
 
     def register_handler(
         self,
         method: str,
-        handler: Callable[[Dict[str, Any]], Coroutine[Any, Any, Dict[str, Any]]],
+        handler: Callable[[dict[str, Any]], Coroutine[Any, Any, dict[str, Any]]],
     ) -> None:
         """Binds a method name to an async handler function."""
         self._handlers[method] = handler
@@ -150,8 +151,8 @@ class ClusterRpcClient(IRpcClient):
         self.timeout = timeout_sec
 
     async def call(
-        self, host: str, port: int, method: str, params: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, host: str, port: int, method: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Invokes an RPC method on a target node.
 

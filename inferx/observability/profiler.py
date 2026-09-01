@@ -6,7 +6,6 @@ Captures request milestones and logs slow requests exceeding latency budgets.
 """
 
 import time
-from typing import Dict, List, Tuple
 
 from inferx.utils.logging import get_logger
 
@@ -23,14 +22,14 @@ class ExecutionTimeline:
     ) -> None:
         self.request_id = request_id
         self.slow_threshold_ms = slow_request_threshold_ms
-        self._milestones: List[Tuple[str, int]] = []
+        self._milestones: list[tuple[str, int]] = []
         self.record("start")
 
     def record(self, milestone_name: str) -> None:
         """Appends a timestamped milestone marker."""
         self._milestones.append((milestone_name, time.perf_counter_ns()))
 
-    def get_breakdown(self) -> Dict[str, float]:
+    def get_breakdown(self) -> dict[str, float]:
         """
         Calculates millisecond durations between consecutive milestones.
 

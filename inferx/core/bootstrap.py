@@ -5,16 +5,24 @@ InferX Dependency Injection & Bootstrap Coordinator.
 Implements a provider-based DI container and coordinates async component instantiation.
 """
 
-from abc import ABC, abstractmethod
 import os
-from typing import Any, Callable, Dict, Type, TypeVar
+from abc import ABC, abstractmethod
+from collections.abc import Callable
+from typing import Any, TypeVar
 
+from inferx.admission.limiter import TokenBucketLimiter
+from inferx.admission.manager import AdmissionManager
+from inferx.admission.shedder import BackpressureController, CircuitBreaker, LoadShedder
 from inferx.core.config import AsyncYAMLConfigLoader
 from inferx.core.context import RuntimeContext
 from inferx.core.health import HealthManager
 from inferx.core.lifecycle import RuntimeLifecycle
 from inferx.core.supervisor import RuntimeSupervisor
 from inferx.errors.taxonomy import DependencyInjectionError
+from inferx.gateway.manager import GatewayManager
+from inferx.gateway.middleware import MiddlewarePipeline
+from inferx.gateway.protocols import RestAdapter, WebSocketAdapter
+from inferx.gateway.router import GatewayRouter
 from inferx.interfaces.core import (
     IConfigLoader,
     IDIContainer,
@@ -22,20 +30,12 @@ from inferx.interfaces.core import (
     IRuntimeLifecycle,
     IRuntimeSupervisor,
 )
-from inferx.utils.logging import configure_logging, get_logger
-
-from inferx.admission.limiter import TokenBucketLimiter
-from inferx.admission.manager import AdmissionManager
-from inferx.admission.shedder import BackpressureController, LoadShedder, CircuitBreaker
-from inferx.gateway.manager import GatewayManager
-from inferx.gateway.middleware import MiddlewarePipeline
-from inferx.gateway.protocols import RestAdapter, WebSocketAdapter
-from inferx.gateway.router import GatewayRouter
 from inferx.model.cache import ModelCache
+from inferx.model.interfaces import ModelMetadata
 from inferx.model.loader import ModelLoader
 from inferx.model.manager import ModelRuntimeManager
 from inferx.model.registry import ModelRegistry
-from inferx.model.interfaces import ModelMetadata
+from inferx.utils.logging import configure_logging, get_logger
 
 T = TypeVar("T")
 logger = get_logger("bootstrap")
@@ -89,9 +89,9 @@ class DIContainer(IDIContainer):
     """
 
     def __init__(self) -> None:
-        self._providers: Dict[Type[Any], Provider] = {}
+        self._providers: dict[type[Any], Provider] = {}
 
-    def register(self, interface: Type[T], provider: Any) -> None:
+    def register(self, interface: type[T], provider: Any) -> None:
         """Registers a Provider to resolve dependencies for an interface."""
         if not isinstance(provider, Provider):
             raise DependencyInjectionError(
@@ -100,7 +100,7 @@ class DIContainer(IDIContainer):
             )
         self._providers[interface] = provider
 
-    def resolve(self, interface: Type[T]) -> T:
+    def resolve(self, interface: type[T]) -> T:
         """Resolves the instance bound to the requested interface."""
         provider = self._providers.get(interface)
         if provider is None:

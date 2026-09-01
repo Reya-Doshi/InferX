@@ -6,13 +6,13 @@ Coordinates tracing registries, Prometheus exporters, alert checks,
 and dashboard schema exports.
 """
 
-from typing import Any, Dict, Optional
 import threading
+from typing import Any
 
+from inferx.observability.alert import AlertManager
+from inferx.observability.health import HealthAggregator
 from inferx.observability.metrics import MetricsRegistry
 from inferx.observability.tracing import Tracer
-from inferx.observability.health import HealthAggregator
-from inferx.observability.alert import AlertManager
 from inferx.utils.logging import get_logger
 
 logger = get_logger("observability.manager")
@@ -25,10 +25,10 @@ class TelemetryManager:
 
     def __init__(
         self,
-        metrics_registry: Optional[MetricsRegistry] = None,
-        tracer: Optional[Tracer] = None,
-        health_aggregator: Optional[HealthAggregator] = None,
-        alert_manager: Optional[AlertManager] = None,
+        metrics_registry: MetricsRegistry | None = None,
+        tracer: Tracer | None = None,
+        health_aggregator: HealthAggregator | None = None,
+        alert_manager: AlertManager | None = None,
     ) -> None:
         self.metrics = metrics_registry or MetricsRegistry()
         self.tracer = tracer or Tracer()
@@ -36,7 +36,7 @@ class TelemetryManager:
         self.alerts = alert_manager or AlertManager()
         self._lock = threading.Lock()
 
-    def get_dashboard_data(self) -> Dict[str, Any]:
+    def get_dashboard_data(self) -> dict[str, Any]:
         """
         Compiles current metrics, health statuses, and tracing delays
         into a unified JSON dashboard schema.

@@ -6,7 +6,6 @@ Captures failed event dispatches, wrapping diagnostic exceptions alongside the o
 EventEnvelope for observability indexing.
 """
 
-from typing import List, Optional, Tuple
 import asyncio
 
 from inferx.event_bus.envelope import EventEnvelope
@@ -26,14 +25,14 @@ class DeadLetterQueue(IDeadLetterQueue):
 
     def __init__(self, capacity: int = 1000) -> None:
         self.capacity = capacity
-        self._dlq_buffer: List[Tuple[EventEnvelope, str, Optional[str]]] = []
+        self._dlq_buffer: list[tuple[EventEnvelope, str, str | None]] = []
         self._lock = asyncio.Lock()
 
     async def route_to_dlq(
         self,
         envelope: EventEnvelope,
         reason: str,
-        exception: Optional[Exception] = None,
+        exception: Exception | None = None,
     ) -> None:
         """
         Appends failed events to the buffer and writes structured logs.
@@ -74,7 +73,7 @@ class DeadLetterQueue(IDeadLetterQueue):
         finally:
             telemetry_context.reset(token)
 
-    async def get_failed_events(self) -> List[Tuple[EventEnvelope, str, Optional[str]]]:
+    async def get_failed_events(self) -> list[tuple[EventEnvelope, str, str | None]]:
         """Returns the failed event list."""
         async with self._lock:
             return list(self._dlq_buffer)

@@ -1,7 +1,8 @@
 # tests/test_deployment.py
-import unittest
-import os
 import json
+import os
+import unittest
+
 from inferx.deployment.config import RuntimeConfigurationManager
 from inferx.deployment.controller import DeploymentController
 

@@ -6,7 +6,6 @@ Declares the Pydantic schemas representing concrete payload parameters
 for core lifecycle and execution events.
 """
 
-from typing import Optional
 from pydantic import BaseModel
 
 
@@ -57,7 +56,7 @@ class InferenceCompleted(BaseEvent):
 class WorkerFailed(BaseEvent):
     worker_id: str
     gpu_id: int
-    exit_code: Optional[int] = None
+    exit_code: int | None = None
     reason: str
 
 

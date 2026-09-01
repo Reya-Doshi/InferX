@@ -7,7 +7,7 @@ load shedders, and the primary IAdmissionController coordinator.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
+
 from pydantic import BaseModel, Field
 
 from inferx.scheduler.interfaces import ScheduledRequest
@@ -21,7 +21,7 @@ class AdmissionVerdict(BaseModel):
     """
 
     admitted: bool
-    error_code: Optional[str] = None
+    error_code: str | None = None
     status_code: int = Field(default=200, ge=100, le=599)  # HTTP Status code equivalent
     retry_after_sec: float = Field(default=0.0, ge=0.0)
 

@@ -8,13 +8,12 @@ and atomic model hot-reloading.
 
 import asyncio
 import time
-from typing import Optional
 
-from inferx.model.interfaces import IModelInstance, ITokenizer, ModelMetadata
-from inferx.model.registry import ModelRegistry
-from inferx.model.loader import ModelLoader, MockTokenizer
 from inferx.model.cache import ModelCache
+from inferx.model.interfaces import IModelInstance, ITokenizer, ModelMetadata
+from inferx.model.loader import MockTokenizer, ModelLoader
 from inferx.model.metrics import ModelMetrics
+from inferx.model.registry import ModelRegistry
 from inferx.utils.logging import get_logger
 
 logger = get_logger("model.manager")
@@ -30,8 +29,8 @@ class ModelRuntimeManager:
         registry: ModelRegistry,
         loader: ModelLoader,
         cache: ModelCache,
-        tokenizer: Optional[ITokenizer] = None,
-        metrics: Optional[ModelMetrics] = None,
+        tokenizer: ITokenizer | None = None,
+        metrics: ModelMetrics | None = None,
     ) -> None:
         self.registry = registry
         self.loader = loader

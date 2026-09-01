@@ -1,11 +1,12 @@
 # tests/test_performance.py
 import unittest
+
 from inferx.performance.benchmark import BenchmarkRunner
 from inferx.performance.chaos import ChaosController, FaultInjector
 from inferx.performance.load import LoadGenerator
 from inferx.performance.profiler import RuntimeProfiler
-from inferx.performance.validation import ValidationEngine
 from inferx.performance.report import ReportGenerator
+from inferx.performance.validation import ValidationEngine
 
 
 class TestPerformance(unittest.IsolatedAsyncioTestCase):

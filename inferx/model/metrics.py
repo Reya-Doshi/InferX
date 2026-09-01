@@ -5,8 +5,8 @@ InferX Model Metrics.
 Tracks model inference latencies, loading times, token counts, and VRAM utilization.
 """
 
-from typing import Any
 import threading
+from typing import Any
 
 
 class ModelMetrics:

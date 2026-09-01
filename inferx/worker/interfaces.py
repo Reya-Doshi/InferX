@@ -8,7 +8,7 @@ and core worker interfaces.
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List
+
 from pydantic import BaseModel
 
 
@@ -27,7 +27,7 @@ class WorkerInfo(BaseModel):
 
     worker_id: str
     gpu_id: int
-    cpu_cores: List[int]
+    cpu_cores: list[int]
     status: WorkerStatus
     last_heartbeat: float
 

@@ -7,9 +7,8 @@ and version mapping rules.
 """
 
 import random
-from typing import Dict, Optional, Tuple
 
-from inferx.gateway.interfaces import IGatewayRouter, GatewayRequestContext
+from inferx.gateway.interfaces import GatewayRequestContext, IGatewayRouter
 from inferx.utils.logging import get_logger
 
 logger = get_logger("gateway.router")
@@ -22,15 +21,15 @@ class GatewayRouter(IGatewayRouter):
 
     def __init__(
         self,
-        canary_weights: Optional[Dict[str, Dict[str, float]]] = None,
-        tenant_routes: Optional[Dict[str, Tuple[str, str]]] = None,
+        canary_weights: dict[str, dict[str, float]] | None = None,
+        tenant_routes: dict[str, tuple[str, str]] | None = None,
     ) -> None:
         # Maps model_name -> version -> percentage_weight (summing to 1.0)
         self.canary_weights = canary_weights or {}
         # Maps tenant_id -> (model_name, version)
         self.tenant_routes = tenant_routes or {}
 
-    def route(self, context: GatewayRequestContext) -> Tuple[str, str]:
+    def route(self, context: GatewayRequestContext) -> tuple[str, str]:
         """
         Resolves routing targets.
 

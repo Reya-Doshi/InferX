@@ -8,16 +8,15 @@ continuous iteration steps, and batch splits and merges.
 
 import asyncio
 import unittest
-from typing import List
 
 from inferx.batcher.engine import (
-    StaticBatcher,
     ContinuousBatcher,
-    split_batch,
+    StaticBatcher,
     merge_batches,
+    split_batch,
 )
 from inferx.batcher.interfaces import Batch, IBatchHandler
-from inferx.batcher.padding import pad_tensors, ShapeBucketeer
+from inferx.batcher.padding import ShapeBucketeer, pad_tensors
 from inferx.scheduler.interfaces import ScheduledRequest
 from inferx.scheduler.manager import Scheduler
 from inferx.scheduler.policies import FIFOPolicy
@@ -27,7 +26,7 @@ class MockBatchHandler(IBatchHandler):
     """Mocks the execution target, storing received batches for inspection."""
 
     def __init__(self) -> None:
-        self.batches: List[Batch] = []
+        self.batches: list[Batch] = []
 
     async def handle_batch(self, batch: Batch) -> None:
         self.batches.append(batch)
@@ -37,7 +36,7 @@ class TestBatcher(unittest.IsolatedAsyncioTestCase):
     """Unit test suite for the Dynamic Batcher."""
 
     def build_request(
-        self, request_id: str, tokens: List[int], max_tokens: int = 10
+        self, request_id: str, tokens: list[int], max_tokens: int = 10
     ) -> ScheduledRequest:
         return ScheduledRequest(
             request_id=request_id,

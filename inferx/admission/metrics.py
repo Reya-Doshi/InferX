@@ -5,8 +5,8 @@ InferX Admission Metrics.
 Tracks admission telemetry including accepts, rejects, latency, and status code counts.
 """
 
-from typing import Any, Dict
 import threading
+from typing import Any
 
 
 class AdmissionMetrics:
@@ -18,7 +18,7 @@ class AdmissionMetrics:
         self._lock = threading.Lock()
         self._accepted = 0
         self._rejected = 0
-        self._counts: Dict[int, int] = {}
+        self._counts: dict[int, int] = {}
         self._retry_afters = 0.0
         self._total_latency_ns = 0
 

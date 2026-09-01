@@ -7,8 +7,9 @@ evaluating dependency health in parallel.
 """
 
 import asyncio
-from typing import Any, Callable, Coroutine, Dict, Tuple
 import threading
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 from inferx.utils.logging import get_logger
 
@@ -22,13 +23,13 @@ class HealthAggregator:
 
     def __init__(self) -> None:
         # Maps component name -> callback returning (is_healthy, detail_string)
-        self._probes: Dict[str, Callable[[], Coroutine[Any, Any, Tuple[bool, str]]]] = (
+        self._probes: dict[str, Callable[[], Coroutine[Any, Any, tuple[bool, str]]]] = (
             {}
         )
         self._lock = threading.Lock()
 
     def register_probe(
-        self, name: str, callback: Callable[[], Coroutine[Any, Any, Tuple[bool, str]]]
+        self, name: str, callback: Callable[[], Coroutine[Any, Any, tuple[bool, str]]]
     ) -> None:
         """Registers a component health evaluation callback."""
         with self._lock:
@@ -42,7 +43,7 @@ class HealthAggregator:
         with self._lock:
             self._probes.pop(name, None)
 
-    async def check_health(self) -> Tuple[bool, Dict[str, str]]:
+    async def check_health(self) -> tuple[bool, dict[str, str]]:
         """
         Executes all registered probes in parallel.
 
@@ -75,11 +76,11 @@ class HealthAggregator:
 
         return overall_healthy, details
 
-    async def check_liveness(self) -> Tuple[bool, Dict[str, str]]:
+    async def check_liveness(self) -> tuple[bool, dict[str, str]]:
         """Verifies if components are alive (fail-fast check)."""
         return await self.check_health()
 
-    async def check_readiness(self) -> Tuple[bool, Dict[str, str]]:
+    async def check_readiness(self) -> tuple[bool, dict[str, str]]:
         """Verifies if the runtime is ready to accept incoming user traffic."""
         # Readiness checks verify if components are loaded (context state == READY/RUNNING)
         return await self.check_health()

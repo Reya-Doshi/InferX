@@ -11,9 +11,9 @@ import unittest
 
 from inferx.distributed.discovery import NodeRegistry
 from inferx.distributed.interfaces import NodeInfo, NodeStatus
+from inferx.distributed.manager import ClusterManager
 from inferx.distributed.rpc import ClusterRpcClient
 from inferx.distributed.scheduler import DistributedScheduler
-from inferx.distributed.manager import ClusterManager
 from inferx.scheduler.interfaces import ScheduledRequest
 
 

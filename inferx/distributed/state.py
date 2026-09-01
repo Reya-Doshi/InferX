@@ -7,7 +7,7 @@ and follower states synchronization.
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from inferx.distributed.rpc import ClusterRpcClient
 from inferx.utils.logging import get_logger
@@ -21,13 +21,13 @@ class ClusterStateManager:
     """
 
     def __init__(
-        self, node_id: str, rpc_client: Optional[ClusterRpcClient] = None
+        self, node_id: str, rpc_client: ClusterRpcClient | None = None
     ) -> None:
         self.node_id = node_id
         self.rpc_client = rpc_client or ClusterRpcClient()
 
         # Local cluster state metadata store
-        self._state: Dict[str, Any] = {}
+        self._state: dict[str, Any] = {}
         self._lock = asyncio.Lock()
 
     async def get_value(self, key: str) -> Any:
@@ -39,7 +39,7 @@ class ClusterStateManager:
             self._state[key] = value
 
     async def replicate_to_followers(
-        self, peers: List[Dict[str, Any]], key: str, value: Any
+        self, peers: list[dict[str, Any]], key: str, value: Any
     ) -> None:
         """
         Replicates a configuration key/value pair to all followers.
@@ -49,7 +49,7 @@ class ClusterStateManager:
         async with self._lock:
             self._state[key] = value
 
-        async def replicate_peer(peer: Dict[str, Any]) -> None:
+        async def replicate_peer(peer: dict[str, Any]) -> None:
             try:
                 await self.rpc_client.call(
                     peer["host"],
@@ -67,7 +67,7 @@ class ClusterStateManager:
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 
-    async def handle_replicate_state(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def handle_replicate_state(self, params: dict[str, Any]) -> dict[str, Any]:
         """RPC Endpoint: Receives replicated configuration updates from the Leader."""
         key = params.get("key", "")
         value = params.get("value")
