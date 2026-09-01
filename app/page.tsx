@@ -20,9 +20,9 @@ interface EngineMetrics {
 }
 
 export default function InferXDashboard() {
-  // 1. Client-Side Telemetry State Tracking
+  // 1. Persistent React States for Telemetry Tracking
   const [activeConnections, setActiveConnections] = useState<number>(0);
-  const [latencies, setLatencies] = useState<number[]>([]);
+  const [completedLatencies, setCompletedLatencies] = useState<number[]>([]);
   const [activeThroughput, setActiveThroughput] = useState<number>(0.0);
   const [gpuLoad, setGpuLoad] = useState<number>(0);
   const [logs, setLogs] = useState<EngineLog[]>([]);
@@ -37,12 +37,12 @@ export default function InferXDashboard() {
   const logListRef = useRef<HTMLDivElement>(null);
   const throughputTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 3. Compute Dynamic Average Latency (Preserved Across Idle States)
-  const avgLatency = latencies.length
-    ? (latencies.reduce((a, b) => a + b, 0) / latencies.length).toFixed(1)
+  // 3. Compute Display Average Latency (Retains moving average of completed runs across idle states)
+  const displayAvgLatency = completedLatencies.length
+    ? (completedLatencies.reduce((a, b) => a + b, 0) / completedLatencies.length).toFixed(1)
     : "0.0";
 
-  // Bind SSE Stream Directly for Logs and Background Sync
+  // Bind SSE Stream Directly for Logs & Background Sync (Never overwrites completedLatencies with 0)
   useEffect(() => {
     const eventSource = new EventSource("/api/telemetry");
 
@@ -119,8 +119,8 @@ export default function InferXDashboard() {
     } finally {
       const duration = performance.now() - startTime;
 
-      // Update latencies (retain last 10 entries)
-      setLatencies((prev) => [...prev.slice(-9), duration]);
+      // Extract numeric duration and append to persistent completedLatencies
+      setCompletedLatencies((prev) => [...prev, duration]);
 
       // Decrement active connections
       setActiveConnections((prev) => {
@@ -182,11 +182,11 @@ export default function InferXDashboard() {
               <div style={{ fontSize: "0.75rem", color: "#10b981", marginTop: "0.5rem" }}>Live Request Activity</div>
             </div>
 
-            {/* Average Latency (ms) - Dynamically calculated from completed request latencies */}
+            {/* 4. Average Latency (ms) - Binds directly to displayAvgLatency */}
             <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(79,172,254,0.15)", borderRadius: "12px", padding: "1.25rem" }}>
               <div style={{ fontSize: "0.8rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600 }}>Avg Latency</div>
               <div style={{ fontSize: "1.8rem", fontWeight: 700, marginTop: "0.4rem" }}>
-                {avgLatency} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>ms</span>
+                {displayAvgLatency} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>ms</span>
               </div>
               <div style={{ fontSize: "0.75rem", color: "#4facfe", marginTop: "0.5rem" }}>Moving Average (Completed Runs)</div>
             </div>
@@ -272,7 +272,7 @@ export default function InferXDashboard() {
             </div>
           </div>
 
-          {/* 4. Explanatory RUNTIME TELEMETRY NOTE Card */}
+          {/* RUNTIME TELEMETRY NOTE Card */}
           <div className="mt-3 p-3.5 rounded-xl border border-zinc-800/80 bg-zinc-950/70 font-mono text-xs text-zinc-400 space-y-1.5" style={{ marginTop: "0.75rem", padding: "0.875rem", borderRadius: "0.75rem", border: "1px solid rgba(39, 39, 42, 0.8)", backgroundColor: "rgba(9, 9, 11, 0.7)", fontFamily: "monospace", fontSize: "0.75rem", color: "#a1a1aa", lineHeight: 1.45 }}>
             <div style={{ marginBottom: "0.35rem" }}>
               <span className="text-cyan-400 bg-cyan-950/60 border border-cyan-800/50 px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase inline-block" style={{ color: "#22d3ee", backgroundColor: "rgba(8, 51, 68, 0.6)", border: "1px solid rgba(21, 94, 117, 0.5)", padding: "0.15rem 0.5rem", borderRadius: "4px", fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", display: "inline-block" }}>
