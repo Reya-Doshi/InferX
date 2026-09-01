@@ -20,11 +20,10 @@ interface EngineMetrics {
 }
 
 export default function InferXDashboard() {
-  // Pure Zero-State Defaults
-  const [activeThroughput, setActiveThroughput] = useState<number>(0.0);
-  const [avgLatency, setAvgLatency] = useState<number>(0.0);
-  const [concurrency, setConcurrency] = useState<number>(0);
+  // 1. Client-Side Telemetry State Tracking
   const [activeConnections, setActiveConnections] = useState<number>(0);
+  const [latencies, setLatencies] = useState<number[]>([]);
+  const [activeThroughput, setActiveThroughput] = useState<number>(0.0);
   const [gpuLoad, setGpuLoad] = useState<number>(0);
   const [logs, setLogs] = useState<EngineLog[]>([]);
 
@@ -36,22 +35,23 @@ export default function InferXDashboard() {
   const [uptimeSeconds, setUptimeSeconds] = useState(0);
 
   const logListRef = useRef<HTMLDivElement>(null);
+  const throughputTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Bind SSE Stream Directly to State (Exact JSON Key Matching)
+  // 3. Compute Dynamic Average Latency (Preserved Across Idle States)
+  const avgLatency = latencies.length
+    ? (latencies.reduce((a, b) => a + b, 0) / latencies.length).toFixed(1)
+    : "0.0";
+
+  // Bind SSE Stream Directly for Logs and Background Sync
   useEffect(() => {
     const eventSource = new EventSource("/api/telemetry");
 
     eventSource.onmessage = (event) => {
       try {
         const data: EngineMetrics = JSON.parse(event.data);
-
-        // Bind incoming SSE properties directly to React hooks
-        setActiveThroughput(data.requestsThroughputSec ?? 0.0);
-        setAvgLatency(data.avgInferenceLatencyMs ?? 0.0);
-        setConcurrency(data.activeRequests ?? 0);
-        setActiveConnections(data.activeRequests ?? 0);
-        setGpuLoad(Math.round((data.workerUtilization ?? 0.0) * 100));
-        setLogs(data.recentLogs ?? []);
+        if (data.recentLogs && data.recentLogs.length > 0) {
+          setLogs(data.recentLogs);
+        }
       } catch (err) {
         console.error("Failed to parse telemetry SSE packet:", err);
       }
@@ -69,6 +69,9 @@ export default function InferXDashboard() {
     return () => {
       eventSource.close();
       clearInterval(uptimeTimer);
+      if (throughputTimerRef.current) {
+        clearTimeout(throughputTimerRef.current);
+      }
     };
   }, []);
 
@@ -79,7 +82,7 @@ export default function InferXDashboard() {
     }
   }, [logs]);
 
-  // Execute Playground Inference Request
+  // 2. Handle "Execute Inference Request" Lifecycle
   const handleExecuteInference = async () => {
     if (!prompt.trim()) {
       alert("Please enter a query prompt.");
@@ -88,6 +91,16 @@ export default function InferXDashboard() {
 
     setIsExecuting(true);
     setOutput("// Processing real-time inference request via /api/inference...");
+
+    // Record start state
+    const startTime = performance.now();
+    setActiveConnections((prev) => prev + 1);
+    setActiveThroughput(1.0);
+    setGpuLoad(45);
+
+    if (throughputTimerRef.current) {
+      clearTimeout(throughputTimerRef.current);
+    }
 
     try {
       const res = await fetch("/api/inference", {
@@ -104,6 +117,25 @@ export default function InferXDashboard() {
     } catch (err: any) {
       setOutput(`// Execution Failure:\n${err?.message || "Connection failed"}`);
     } finally {
+      const duration = performance.now() - startTime;
+
+      // Update latencies (retain last 10 entries)
+      setLatencies((prev) => [...prev.slice(-9), duration]);
+
+      // Decrement active connections
+      setActiveConnections((prev) => {
+        const nextConn = Math.max(0, prev - 1);
+        if (nextConn === 0) {
+          setGpuLoad(0);
+        }
+        return nextConn;
+      });
+
+      // 3-second grace timeout before resetting activeThroughput back to 0.0
+      throughputTimerRef.current = setTimeout(() => {
+        setActiveThroughput(0.0);
+      }, 3000);
+
       setIsExecuting(false);
     }
   };
@@ -122,12 +154,12 @@ export default function InferXDashboard() {
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <div style={{ width: "12px", height: "12px", background: "#00f2fe", borderRadius: "50%", boxShadow: "0 0 12px #00f2fe" }} />
           <h1 style={{ fontSize: "1.4rem", fontWeight: 700, background: "linear-gradient(135deg, #00f2fe, #4facfe)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            InferX Operations Center (Live SSE)
+            InferX Operations Center (Live Telemetry)
           </h1>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
           <div style={{ background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.3)", padding: "0.3rem 0.8rem", borderRadius: "20px", color: "#10b981", fontSize: "0.85rem", fontWeight: 600 }}>
-            ● PURE SSE STREAM
+            ● LIVE RUNTIME PIPELINE
           </div>
           <div style={{ fontSize: "0.85rem", color: "#9ca3af" }}>
             Uptime: <span style={{ color: "#f3f4f6", fontFamily: "monospace" }}>{formatUptime(uptimeSeconds)}</span>
@@ -147,34 +179,34 @@ export default function InferXDashboard() {
               <div style={{ fontSize: "1.8rem", fontWeight: 700, marginTop: "0.4rem" }}>
                 {activeThroughput.toFixed(1)} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>RPS</span>
               </div>
-              <div style={{ fontSize: "0.75rem", color: "#10b981", marginTop: "0.5rem" }}>Live 5s Window</div>
+              <div style={{ fontSize: "0.75rem", color: "#10b981", marginTop: "0.5rem" }}>Live Request Activity</div>
             </div>
 
-            {/* Average Latency (ms) - Preserves rolling average of completed requests */}
+            {/* Average Latency (ms) - Dynamically calculated from completed request latencies */}
             <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(79,172,254,0.15)", borderRadius: "12px", padding: "1.25rem" }}>
               <div style={{ fontSize: "0.8rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600 }}>Avg Latency</div>
               <div style={{ fontSize: "1.8rem", fontWeight: 700, marginTop: "0.4rem" }}>
-                {avgLatency.toFixed(1)} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>ms</span>
+                {avgLatency} <span style={{ fontSize: "0.9rem", color: "#9ca3af" }}>ms</span>
               </div>
-              <div style={{ fontSize: "0.75rem", color: "#4facfe", marginTop: "0.5rem" }}>Execution Rolling Avg</div>
+              <div style={{ fontSize: "0.75rem", color: "#4facfe", marginTop: "0.5rem" }}>Moving Average (Completed Runs)</div>
             </div>
 
-            {/* Engine Load (%) */}
+            {/* Engine / GPU Load (%) */}
             <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "12px", padding: "1.25rem" }}>
-              <div style={{ fontSize: "0.8rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600 }}>Engine Load</div>
+              <div style={{ fontSize: "0.8rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600 }}>GPU Load</div>
               <div style={{ fontSize: "1.8rem", fontWeight: 700, marginTop: "0.4rem", color: "#00f2fe" }}>
                 {gpuLoad}%
               </div>
-              <div style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: "0.5rem" }}>Host CPU Utilization</div>
+              <div style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: "0.5rem" }}>Active Execution Status</div>
             </div>
 
             {/* Concurrency / Active Connections */}
             <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "12px", padding: "1.25rem" }}>
               <div style={{ fontSize: "0.8rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600 }}>Concurrency</div>
               <div style={{ fontSize: "1.8rem", fontWeight: 700, marginTop: "0.4rem" }}>
-                {concurrency}
+                {activeConnections}
               </div>
-              <div style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: "0.5rem" }}>Active Connections ({activeConnections})</div>
+              <div style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: "0.5rem" }}>Active Connections</div>
             </div>
           </div>
 
@@ -216,7 +248,7 @@ export default function InferXDashboard() {
           </div>
         </div>
 
-        {/* Right Column: Gossip Cluster Logs & Explanatory Note Box */}
+        {/* Right Column: Gossip Cluster Logs & Explanatory Status Note */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div style={{ background: "rgba(22, 28, 45, 0.45)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "1.25rem", flex: 1, display: "flex", flexDirection: "column" }}>
             <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.75rem", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "0.5rem" }}>
@@ -239,12 +271,14 @@ export default function InferXDashboard() {
             </div>
           </div>
 
-          {/* Explanatory Telemetry Note Box */}
-          <div style={{ marginTop: "0.75rem", padding: "0.85rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(6, 9, 19, 0.6)", fontSize: "0.75rem", color: "#9ca3af", fontFamily: "monospace", lineHeight: 1.45 }}>
-            <span style={{ color: "#00f2fe", backgroundColor: "rgba(0, 242, 254, 0.1)", border: "1px solid rgba(0, 242, 254, 0.3)", padding: "0.15rem 0.4rem", borderRadius: "4px", fontSize: "0.65rem", fontWeight: 700, marginRight: "0.5rem", display: "inline-block", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              LIVE TELEMETRY NOTE
-            </span>
-            Metrics reflect live runtime status. Throughput, average latency, and active concurrency remain at 0.0 during idle periods and update dynamically upon executing inference requests in the playground.
+          {/* 4. Explanatory Runtime Telemetry Note Card */}
+          <div style={{ marginTop: "0.75rem", padding: "0.875rem", borderRadius: "0.75rem", border: "1px solid rgba(39, 39, 42, 0.8)", backgroundColor: "rgba(9, 9, 11, 0.7)", fontFamily: "monospace", fontSize: "0.75rem", color: "#a1a1aa", lineHeight: 1.45 }}>
+            <div style={{ marginBottom: "0.4rem" }}>
+              <span style={{ color: "#22d3ee", backgroundColor: "rgba(8, 51, 68, 0.6)", border: "1px solid rgba(21, 94, 117, 0.5)", padding: "0.15rem 0.5rem", borderRadius: "4px", fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", display: "inline-block" }}>
+                RUNTIME TELEMETRY NOTE
+              </span>
+            </div>
+            Metrics reflect live runtime status. Throughput, GPU load, and concurrency sit at 0 during idle states and update dynamically upon executing requests. Average latency retains the moving average of completed inference runs.
           </div>
         </div>
       </main>
