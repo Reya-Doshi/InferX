@@ -1,0 +1,96 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inferx"
+version = "0.1.0"
+description = "Production-grade, distributed AI inference engine designed for cloud-native orchestration of LLMs and deep learning workloads."
+readme = "README.md"
+authors = [
+    { name = "Reya Doshi" }
+]
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+keywords = [
+    "ai",
+    "inference-engine",
+    "llm",
+    "distributed-systems",
+    "shared-memory",
+    "vllm",
+    "raft-consensus",
+    "kubernetes",
+    "fastapi"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: System :: Distributed Computing"
+]
+
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.20.0",
+    "pydantic>=2.0.0",
+    "google-genai>=2.10.0",
+    "psutil>=5.9.0",
+    "pynvml>=11.5.0",
+    "pyyaml>=6.0.0",
+    "prometheus-client>=0.17.0",
+    "python-dotenv>=1.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0"
+]
+cuda = [
+    "torch>=2.0.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/Reya-Doshi/InferX"
+Documentation = "https://github.com/Reya-Doshi/InferX/blob/main/ARCHITECTURE.md"
+Repository = "https://github.com/Reya-Doshi/InferX.git"
+Issues = "https://github.com/Reya-Doshi/InferX/issues"
+
+[project.scripts]
+inferx = "inferx.gateway.server:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["inferx*", "api*", "deploy*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q"
+asyncio_mode = "auto"
+testpaths = [
+    "tests",
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+strict_optional = true
