@@ -105,19 +105,30 @@ class RestAdapter(IProtocolAdapter):
 
             if method != "POST" or not path.endswith("/predict"):
                 # Handle simple health check endpoints
-                if method == "GET" and path in ["/health", "/healthz", "/readyz"]:
+                if method in ["GET", "HEAD"] and path in [
+                    "/health",
+                    "/healthz",
+                    "/readyz",
+                ]:
                     await self._write_json_response(writer, 200, {"status": "healthy"})
                     return
-                if method == "GET" and path in ["/", "/dashboard", "/index.html"]:
+                if method in ["GET", "HEAD"] and path in [
+                    "/",
+                    "/dashboard",
+                    "/index.html",
+                ]:
                     await self._serve_dashboard(writer)
                     return
-                if method == "GET" and path == "/api/metrics":
+                if method in ["GET", "HEAD"] and path == "/api/metrics":
                     await self._serve_metrics(writer)
                     return
-                if method == "GET" and path in ["/metrics", "/prometheus/metrics"]:
+                if method in ["GET", "HEAD"] and path in [
+                    "/metrics",
+                    "/prometheus/metrics",
+                ]:
                     await self._serve_prometheus_metrics(writer)
                     return
-                if method == "GET" and path == "/favicon.svg":
+                if method in ["GET", "HEAD"] and path == "/favicon.svg":
                     await self._serve_favicon(writer)
                     return
                 await self._write_json_response(writer, 404, {"error": "Not Found"})

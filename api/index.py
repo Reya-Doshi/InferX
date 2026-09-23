@@ -19,8 +19,8 @@ def app(environ: dict[str, Any], start_response: Any) -> Any:
     path = environ.get("PATH_INFO", "/")
     method = environ.get("REQUEST_METHOD", "GET")
 
-    # Serve HTML Dashboard on GET / or /dashboard or /index.html
-    if method == "GET" and path in ["/", "/dashboard", "/index.html"]:
+    # Serve HTML Dashboard on GET/HEAD / or /dashboard or /index.html
+    if method in ["GET", "HEAD"] and path in ["/", "/dashboard", "/index.html"]:
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             dashboard_path = os.path.join(
@@ -42,10 +42,10 @@ def app(environ: dict[str, Any], start_response: Any) -> Any:
             ("Access-Control-Allow-Origin", "*"),
         ]
         start_response(status, response_headers)
-        return [response_data]
+        return [b""] if method == "HEAD" else [response_data]
 
-    # Serve telemetry metrics on GET /api/metrics
-    if method == "GET" and path == "/api/metrics":
+    # Serve telemetry metrics on GET/HEAD /api/metrics
+    if method in ["GET", "HEAD"] and path == "/api/metrics":
         try:
             import psutil
 
@@ -89,10 +89,10 @@ def app(environ: dict[str, Any], start_response: Any) -> Any:
             ("Access-Control-Allow-Origin", "*"),
         ]
         start_response(status, response_headers)
-        return [response_data]
+        return [b""] if method == "HEAD" else [response_data]
 
-    # Serve Prometheus text-formatted metrics on GET /metrics or GET /prometheus/metrics
-    if method == "GET" and path in ["/metrics", "/prometheus/metrics"]:
+    # Serve Prometheus text-formatted metrics on GET/HEAD /metrics or GET /prometheus/metrics
+    if method in ["GET", "HEAD"] and path in ["/metrics", "/prometheus/metrics"]:
         try:
             import psutil
 
@@ -128,10 +128,10 @@ def app(environ: dict[str, Any], start_response: Any) -> Any:
             ("Access-Control-Allow-Origin", "*"),
         ]
         start_response(status, response_headers)
-        return [response_data]
+        return [b""] if method == "HEAD" else [response_data]
 
     # Health check endpoints
-    if path in ["/health", "/healthz", "/readyz"]:
+    if method in ["GET", "HEAD"] and path in ["/health", "/healthz", "/readyz"]:
         response_body = {"status": "healthy", "service": "inferx-serverless"}
         status = "200 OK"
     elif (path in ["/v1/chat/completions", "/predict"]) and method == "POST":
