@@ -101,6 +101,14 @@ class TokenBucketLimiter:
         with state.lock:
             state.tokens = min(state.capacity, state.tokens + 1.0)
 
+    def get_available_tokens(self, tenant_id: str) -> float:
+        """Calculates and returns the current available tokens without consuming."""
+        state = self._get_or_create_state(tenant_id)
+        with state.lock:
+            now = time.time()
+            elapsed = now - state.last_refill
+            return min(state.capacity, state.tokens + (elapsed * state.refill_rate))
+
 
 class LeakyBucketLimiter:
     """
