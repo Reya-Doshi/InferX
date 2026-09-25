@@ -84,6 +84,10 @@ class SharedMemoryAllocator:
 
     def free(self, offset: int) -> None:
         """Releases the slot at the offset back to the pool (O(1) complexity)."""
+        if offset < 0 or offset >= self.pool_size or offset % self.slot_size != 0:
+            raise ValueError(
+                f"Invalid shared memory offset {offset} for slot size {self.slot_size}."
+            )
         slot_idx = offset // self.slot_size
         with self._lock:
             # Avoid duplicate inserts
