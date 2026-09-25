@@ -159,9 +159,13 @@ class TestAdmissionController(unittest.IsolatedAsyncioTestCase):
 
     async def test_token_bucket_available_tokens_query(self) -> None:
         limiter = TokenBucketLimiter(global_capacity=5.0, global_refill_rate=1.0)
-        self.assertAlmostEqual(limiter.get_available_tokens("tenant-test"), 5.0, places=1)
+        self.assertAlmostEqual(
+            limiter.get_available_tokens("tenant-test"), 5.0, places=1
+        )
         self.assertTrue(limiter.consume("tenant-test"))
-        self.assertAlmostEqual(limiter.get_available_tokens("tenant-test"), 4.0, places=1)
+        self.assertAlmostEqual(
+            limiter.get_available_tokens("tenant-test"), 4.0, places=1
+        )
 
 
 if __name__ == "__main__":
