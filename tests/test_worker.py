@@ -69,6 +69,49 @@ class TestWorkerRuntime(unittest.IsolatedAsyncioTestCase):
             pool.close()
             pool.unlink()
 
+    def test_shared_memory_out_of_bounds_rejection(self) -> None:
+        shm_name = "inferx_test_shm_bounds"
+        shm_size = 512
+        pool = SharedMemoryPool(name=shm_name, size=shm_size, create=True)
+        try:
+            # Writing past end of buffer must raise ValueError
+            with self.assertRaises(ValueError):
+                pool.write(offset=500, data=b"x" * 20)
+
+            # Reading past end of buffer must raise ValueError
+            with self.assertRaises(ValueError):
+                pool.read(offset=500, size=20)
+        finally:
+            pool.close()
+            pool.unlink()
+
+    def test_shared_memory_allocator_exhaustion_and_reuse(self) -> None:
+        # 256 bytes pool with 128-byte slots -> 2 slots max
+        allocator = SharedMemoryAllocator(pool_size=256, slot_size=128)
+        self.assertEqual(allocator.free_slots_count(), 2)
+
+        s0 = allocator.allocate()
+        s1 = allocator.allocate()
+        self.assertEqual(s0, 0)
+        self.assertEqual(s1, 128)
+        self.assertEqual(allocator.free_slots_count(), 0)
+
+        # 3rd allocation must raise BufferError
+        with self.assertRaises(BufferError):
+            allocator.allocate()
+
+        # Free s0 and reallocate
+        allocator.free(s0)
+        self.assertEqual(allocator.free_slots_count(), 1)
+
+        # Duplicate free must not create phantom slots
+        allocator.free(s0)
+        self.assertEqual(allocator.free_slots_count(), 1)
+
+        reallocated = allocator.allocate()
+        self.assertEqual(reallocated, s0)
+        self.assertEqual(allocator.free_slots_count(), 0)
+
     async def test_cuda_stream_concurrency_and_deadlines(self) -> None:
         stream = CudaStream(stream_id=1)
         req = self.build_request("r1", "payload", latency_ms=10.0)
