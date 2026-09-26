@@ -235,6 +235,57 @@ class TestDistributed(unittest.IsolatedAsyncioTestCase):
         # and node-2 hosts the model and has low GPU load (0.2 < 0.9)
         self.assertEqual(res, "processed_remotely_on_9002")
 
+    async def test_election_higher_term_preemption(self) -> None:
+        from inferx.distributed.election import LeaderElection
+
+        election = LeaderElection(node_id="test-node", peers=[])
+        election.state = "LEADER"
+        election.leader_id = "test-node"
+        election.current_term = 2
+        election.voted_for = "test-node"
+
+        # Receiving a heartbeat or vote request with a higher term must cause immediate step down
+        res = await election.handle_request_vote(
+            {"term": 5, "candidate_id": "other-node"}
+        )
+        self.assertTrue(res["vote_granted"])
+        self.assertEqual(election.state, "FOLLOWER")
+        self.assertEqual(election.current_term, 5)
+        self.assertEqual(election.voted_for, "other-node")
+        self.assertIsNone(election.leader_id)
+
+        # Receiving a second vote request in the same term from another candidate must be rejected
+        res2 = await election.handle_request_vote(
+            {"term": 5, "candidate_id": "third-node"}
+        )
+        self.assertFalse(res2["vote_granted"])
+
+    async def test_election_no_quorum_rejection(self) -> None:
+        from inferx.distributed.election import LeaderElection
+        from inferx.distributed.rpc import ClusterRpcClient
+
+        class FailingRpcClient(ClusterRpcClient):
+            async def call(self, host, port, method, params):
+                # Simulate network unreachable or rejected vote
+                return {"vote_granted": False}
+
+        election = LeaderElection(
+            node_id="isolated-node",
+            peers=[
+                {"node_id": "p1", "host": "127.0.0.1", "port": 9991},
+                {"node_id": "p2", "host": "127.0.0.1", "port": 9992},
+            ],
+            rpc_client=FailingRpcClient(),
+        )
+
+        # Trigger election campaign
+        await election.start_election()
+
+        # With 2 peers, majority is (2 + 1) // 2 + 1 = 2 votes. Node has only its self-vote (1).
+        # Must not become leader
+        self.assertNotEqual(election.state, "LEADER")
+        self.assertIsNone(election.get_leader())
+
 
 if __name__ == "__main__":
     unittest.main()
