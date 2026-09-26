@@ -26,10 +26,10 @@ jobs:
           pip install ruff black mypy bandit
 
       - name: Check Code Formatting (Black)
-        run: black --check inferx/ tests/
+        run: black --check inferx/ tests/ api/
 
       - name: Check Code Linting (Ruff)
-        run: ruff check inferx/ tests/
+        run: ruff check inferx/ tests/ api/
 
       - name: Static Type Verification (MyPy)
         run: mypy --ignore-missing-imports --explicit-package-bases inferx/ || true
