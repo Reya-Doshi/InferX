@@ -160,6 +160,55 @@ class TestModelRuntime(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(self.cache.get(("llama-fallback", "v1.0")))
         self.assertIsNone(self.cache.get(("llama-primary", "v1.0")))
 
+    async def test_local_ml_engine_vector_inference(self) -> None:
+        import json
+
+        from inferx.model.loader import LocalMLEngineProvider
+
+        meta = self.build_metadata("LocalML", "v1.0")
+        engine = LocalMLEngineProvider(meta)
+
+        # 1. Non-empty token input
+        sample_prompt = "How does token bucket rate limiting work?"
+        tokens = [ord(c) for c in sample_prompt]
+        out_tokens = await engine.predict(tokens)
+        out_str = "".join(chr(t) for t in out_tokens)
+        payload = json.loads(out_str)
+
+        self.assertEqual(payload["status"], "success")
+        self.assertIn("InferX-LocalML", payload["model_engine"])
+        self.assertIn(
+            payload["predicted_class"],
+            [
+                "TECHNICAL_CODE",
+                "QUESTION_QUERY",
+                "ANALYTICAL_STATEMENT",
+                "GENERAL_INPUT",
+            ],
+        )
+        self.assertIsInstance(payload["confidence_score"], float)
+        self.assertEqual(len(payload["inference_logits"]), 4)
+        self.assertAlmostEqual(sum(payload["inference_logits"]), 1.0, places=2)
+
+        # 2. Empty token input (zero-norm fallback path)
+        empty_out = await engine.predict([])
+        empty_payload = json.loads("".join(chr(t) for t in empty_out))
+        self.assertEqual(empty_payload["status"], "success")
+        self.assertEqual(empty_payload["input_tokens_count"], 0)
+
+    def test_cache_hit_rate_telemetry(self) -> None:
+        from inferx.model.cache import ModelCache
+
+        cache = ModelCache(max_vram_bytes=1024 * 1024)
+        self.assertEqual(cache.hit_rate, 0.0)
+
+        # Query absent key (miss)
+        res = cache.get(("nonexistent", "v1"))
+        self.assertIsNone(res)
+        self.assertEqual(cache.miss_count, 1)
+        self.assertEqual(cache.hit_count, 0)
+        self.assertEqual(cache.hit_rate, 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()
