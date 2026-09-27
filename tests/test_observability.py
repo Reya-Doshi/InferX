@@ -175,6 +175,14 @@ class TestObservability(unittest.IsolatedAsyncioTestCase):
         # Verify it does not trigger slow request warn (duration < 50ms)
         self.assertFalse(timeline.check_slow_request())
 
+    def test_metrics_registry_membership_and_reset(self) -> None:
+        registry = MetricsRegistry()
+        self.assertFalse(registry.has_metric("custom_gauge"))
+        registry.gauge("custom_gauge", "A test gauge")
+        self.assertTrue(registry.has_metric("custom_gauge"))
+        registry.reset()
+        self.assertFalse(registry.has_metric("custom_gauge"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -175,6 +175,16 @@ class MetricsRegistry:
                 self._metrics[name] = Histogram(name, description, buckets)
             return self._metrics[name]
 
+    def has_metric(self, name: str) -> bool:
+        """Returns True if the specified metric is registered."""
+        with self._lock:
+            return name in self._metrics
+
+    def reset(self) -> None:
+        """Clears all registered metrics (useful in testing and teardown)."""
+        with self._lock:
+            self._metrics.clear()
+
     def export_prometheus(self) -> str:
         """Formats and flushes all registered metrics to Prometheus text blocks."""
         all_lines = []
