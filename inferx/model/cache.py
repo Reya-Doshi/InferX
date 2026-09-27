@@ -25,12 +25,29 @@ class ModelCache:
         self.max_vram_bytes = max_vram_bytes
         self._cache: OrderedDict[tuple[str, str], IModelInstance] = OrderedDict()
         self._current_vram = 0
+        self._hits = 0
+        self._misses = 0
+
+    @property
+    def hit_count(self) -> int:
+        return self._hits
+
+    @property
+    def miss_count(self) -> int:
+        return self._misses
+
+    @property
+    def hit_rate(self) -> float:
+        total = self._hits + self._misses
+        return (self._hits / total) if total > 0 else 0.0
 
     def get(self, key: tuple[str, str]) -> IModelInstance | None:
         """Retrieves a model instance and updates its LRU position."""
         if key not in self._cache:
+            self._misses += 1
             return None
 
+        self._hits += 1
         # Move to end (most recently used)
         instance = self._cache.pop(key)
         self._cache[key] = instance
