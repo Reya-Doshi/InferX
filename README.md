@@ -2,398 +2,268 @@
 
 # InferX ⚡
 
-### *Production-Grade, Distributed AI Inference Engine for Cloud-Native LLM Orchestration*
+### *High-Performance, Low-Latency AI Inference Gateway & Cluster Orchestrator*
 
-**Engineered by [Reya Doshi](https://github.com/Reya-Doshi)**
+**Engineered with ❤️ by [Reya Doshi](https://github.com/Reya-Doshi)**
 
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED.svg?style=for-the-badge&logo=docker&logoColor=white)](deploy/render/)
-[![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)](deploy/kubernetes/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/Reya-Doshi/InferX/actions)
-[![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-261230.svg?style=for-the-badge&logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
-[![Zero-Copy IPC](https://img.shields.io/badge/Zero--Copy-SharedMemory-00F2FE.svg?style=for-the-badge)](#-system-internals--engineering-moats)
+[![CI Status](https://github.com/Reya-Doshi/InferX/actions/workflows/ci.yml/badge.svg)](https://github.com/Reya-Doshi/InferX/actions/workflows/ci.yml)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
+[![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-261230.svg?style=flat-square&logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
+[![Audit Status: Verified](https://img.shields.io/badge/Audit-Verified-00F2FE.svg?style=flat-square)](docs/verification.md)
 
 ---
 
-[🌐 Live Render Gateway](https://inferx-89z2.onrender.com/) • [⚡ Vercel Serverless Gateway](https://infer-x-livid.vercel.app/) • [📽️ Demo Video](InferX.mp4) • [📖 Architecture Specs](ARCHITECTURE.md)
+[🌐 Live Render Gateway](https://inferx-89z2.onrender.com/) • [⚡ Vercel Serverless Gateway](https://infer-x-livid.vercel.app/) • [📽️ Demo Video](InferX.mp4) • [📑 Verification Report](docs/verification.md)
 
 </div>
 
 ---
 
-## 📌 Table of Contents
+## 💡 What is InferX in 30 Seconds?
 
-- [🚀 Quickstart](#-quickstart)
-- [🧠 Overview](#-overview)
-- [⚡ Key Features](#-key-features)
-- [🏗️ Architecture & Flow](#-architecture--flow)
-- [🔬 System Internals & Engineering Moats](#-system-internals--engineering-moats)
-- [📊 Benchmarks & SLA Compliance](#-benchmarks--sla-compliance)
-- [🔌 API Specification & Telemetry](#-api-specification--telemetry)
-- [☸️ Cloud & Container Deployments](#️-cloud--container-deployments)
-- [📂 Directory Structure](#-directory-structure)
-- [🤝 Contributing](#-contributing)
-- [📜 License](#-license)
+Serving Large Language Models (LLMs) and deep learning models in production is hard:
+- Requests arrive in unpredictable spikes.
+- Python processes waste precious milliseconds copying large tensor data back and forth.
+- GPUs run out of memory (OOM crashes) if too many requests pile up at once.
+
+**InferX is an intelligent front door (API Gateway) for AI workloads.** It acts like an air-traffic controller:
+1. **Regulates Incoming Traffic:** Uses a token-bucket rate limiter to smooth bursts and shed excess load before workers crash.
+2. **Groups Requests (Batching):** Combines individual user prompts into unified tensor batches to maximize hardware efficiency.
+3. **Eliminates Memory Duplication (Zero-Copy IPC):** Uses POSIX shared memory so worker processes read inputs directly without slow Python `pickle` copying.
+4. **Dual-Engine Execution:** Runs an offline CPU matrix classifier out of the box with zero external API keys, or routes to Google Gemini 2.5 Flash when configured.
 
 ---
 
-## 🚀 Quickstart
+## 🛠️ Tech Stack at a Glance
 
-Get a production-grade InferX node up and running in **under 30 seconds** using modern PEP 517/621 packaging.
+| Layer | Technologies Used | Purpose |
+| :--- | :--- | :--- |
+| **Core Language** | **Python 3.10+ / 3.13 / 3.14** | Primary engine and orchestration runtime |
+| **Async Networking** | **Python `asyncio`**, Custom HTTP/1.1 & WebSocket Framing | Non-blocking, event-driven request handling |
+| **Inter-Process (IPC)** | **`multiprocessing.shared_memory` (POSIX `/dev/shm`)** | High-speed zero-copy shared memory buffer pool |
+| **Machine Learning** | **Pure Python Linear Layer ($W \cdot X + b$)**, **Google GenAI SDK** | Local CPU classification logits + Gemini 2.5 Flash |
+| **Telemetry & Observability** | **`prometheus-client`**, **`psutil`**, Server-Sent Events (SSE) | Host CPU/RAM tracking & Prometheus `/metrics` scraping |
+| **Operations Center UI** | **Next.js 14**, **React 18**, **TypeScript**, **Tailwind CSS** | Real-time cyber-telemetry dashboard & playground |
+| **Cloud Deployments** | **Docker**, **Kubernetes (Helm)**, **Render**, **Vercel** | Containerized and serverless deployment profiles |
+| **Quality & CI** | **`unittest`**, **`ruff`**, **`black`**, **GitHub Actions** | Automated formatting, linting, and 75/75 test suite |
 
-### Step 1: Clone Repository
+---
+
+## 🏗️ Architecture & How It Works
+
+Here is the complete journey of a request through InferX:
+
+```mermaid
+flowchart TD
+    %% Styling
+    classDef client fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef gateway fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff;
+    classDef admission fill:#311042,stroke:#c084fc,stroke-width:2px,color:#fff;
+    classDef routing fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#fff;
+    classDef engine fill:#451a03,stroke:#fb923c,stroke-width:2px,color:#fff;
+    classDef output fill:#1e293b,stroke:#94a3b8,stroke-width:2px,color:#fff;
+
+    Client["💻 Client Request<br/>(REST / SSE / WebSockets)"]:::client --> Gateway["🚪 InferX Async Gateway<br/>(Non-blocking asyncio TCP Server)"]:::gateway
+
+    subgraph AdmissionControl ["🛡️ Step 1: Admission & Protection Gate"]
+        Gateway --> TokenBucket{"🪣 Token Bucket<br/>Rate Limiter"}:::admission
+        TokenBucket -->|Over Capacity| R429["❌ 429 Too Many Requests"]:::admission
+        TokenBucket -->|Allowed| Backpressure{"📊 Backpressure<br/>Monitor"}:::admission
+        Backpressure -->|VRAM / Queue Congested| R503["⚠️ 503 Circuit Breaker Open<br/>(Load Shedding)"]:::admission
+    end
+
+    subgraph Router ["🔀 Step 2: Intelligent Routing Layer"]
+        Backpressure -->|Healthy| TargetCheck{"Target Engine?"}:::routing
+        TargetCheck -->|Local ML / Offline| LocalPath["Local CPU Engine Path"]:::routing
+        TargetCheck -->|gemini-2.5-flash| CloudPath["Cloud Gemini Path"]:::routing
+        TargetCheck -->|Multi-Process Worker| IPCPath["Shared Memory IPC Path"]:::routing
+    end
+
+    subgraph Execution ["🧠 Step 3: Execution Engines"]
+        LocalPath --> LocalML["🖥️ Local Linear Layer<br/>W · X + b Matrix Logits"]:::engine
+        CloudPath --> Gemini["☁️ Google Gemini 2.5 Flash<br/>google-genai Client"]:::engine
+        IPCPath --> SharedMem["⚡ POSIX Shared Memory Pool<br/>64 KB Buffer Slots"]:::engine
+        SharedMem --> WorkerProc["⚙️ Worker Subprocess<br/>Virtual CUDA Streams"]:::engine
+    end
+
+    subgraph OutputDelivery ["📤 Step 4: Output Delivery"]
+        LocalML --> Formatter["Response Formatter"]:::output
+        Gemini --> Formatter
+        WorkerProc --> Formatter
+        Formatter --> ClientResp["✅ JSON Response / SSE Stream"]:::output
+    end
+```
+
+---
+
+## 🔬 The 4 Core Systems Explained Simply
+
+### 1. 🛡️ Admission Controller (The Traffic Cop)
+Prevents server crashes during traffic spikes using a **Two-Tier Defense**:
+- **Token Bucket:** Regulates requests per second ($O(1)$ token checks). Bursts are smoothed out; excess calls return `HTTP 429`.
+- **Priority Load Shedder:** Constantly monitors CPU/VRAM and queue depth. If system memory passes 85%, low-priority background jobs are shed with `HTTP 503` so critical requests never fail.
+
+### 2. 🎯 Dynamic Batcher (The Smart Elevator)
+Instead of running a neural network for every single user query one-by-one, InferX groups requests into batches:
+- **Shape Bucketing:** Groups inputs of similar lengths together, eliminating **57.0%** of wasted zero-padding tokens.
+- **Adaptive Timeout:** Flushes batches immediately when full or after a small timeout ($5\text{ ms}$) so latency stays low.
+
+### 3. ⚡ Zero-Copy Shared Memory IPC (The Fast Lane)
+Standard Python multiprocessing uses `multiprocessing.Queue` to send data between processes, which copies and "pickles" the entire payload into memory.
+
+InferX uses **POSIX Shared Memory (`multiprocessing.shared_memory`)**:
+```
+STANDARD PYTHON MULTIPROCESSING (SLOW)
+[Gateway Process] ──> Pickle Encode ──> Pipe Copy 1 ──> Pipe Copy 2 ──> Pickle Decode ──> [Worker Process]
+
+INFERX ZERO-COPY SHARED MEMORY (FAST)
+[Gateway Process] ───┐                                                 ┌───> [Worker Process]
+                     └───> [ POSIX Shared Memory Buffer: RAM ] <────────┘
+                           (Direct Pointer - Zero CPU Copying)
+```
+- For large tensor buffers ($1\text{ MB}$), this delivers a **$4.05\times$ speedup** over standard Python queues!
+
+### 4. 🧠 Dual-Engine Execution (Local CPU + Cloud LLM)
+- **Zero-Key Mode (Offline):** Runs a self-contained 4-class linear classification layer ($W \cdot X + b$ + Softmax) right on your CPU in under $0.1\text{ ms}$. Perfect for CI, local testing, and classification routing.
+- **Cloud LLM Mode:** Seamlessly calls Google Gemini 2.5 Flash via `google-genai` with automatic retry backoff when an API key is provided.
+
+---
+
+## 🚀 30-Second Quickstart
+
+### 1. Clone & Install
 ```bash
 git clone https://github.com/Reya-Doshi/InferX.git
 cd InferX
-```
 
-### Step 2: Install Package in Editable Mode
-```bash
+# Install in editable mode
 pip install -e .
 ```
 
-### Step 3: Launch Gateway Server
+### 2. Set Up Environment (Optional)
+```bash
+cp .env.example .env
+```
+> [!TIP]
+> InferX runs 100% offline out of the box without any keys! To optionally enable Google Gemini 2.5 Flash:
+> ```bash
+> export GEMINI_API_KEY="your_api_key_here"
+> ```
+
+### 3. Launch the Server
 ```bash
 inferx serve --port 10000
 ```
-
-> [!TIP]
-> To enable live cloud LLM fallback alongside the local ONNX tensor engine, export your Google Gemini API key:
-> ```bash
-> export GEMINI_API_KEY="your_actual_gemini_api_key_here"
-> ```
-
----
-
-## 🧠 Overview
-
-**InferX** is an enterprise-ready, ultra-low-latency AI inference gateway and distributed cluster orchestrator designed to eliminate Python IPC serialization bottlenecks and solve cloud scaling constraints for deep learning workloads.
-
-Engineered with non-blocking `asyncio` event loops, **POSIX Zero-Copy Shared Memory (`multiprocessing.shared_memory`)**, token-bucket admission control, dynamic batching windows, and Raft consensus leader election, InferX scales seamlessly across edge servers, serverless environments (Vercel, Render), and Kubernetes GPU clusters.
-
-> [!NOTE]
-> InferX includes **automatic dual-engine hardware resolution**: when dedicated GPU VRAM is absent (such as CPU serverless instances), InferX executes **100% real local CPU tensor matrix math ($W \cdot X + b$)** with zero external API dependencies, while seamlessly forwarding cloud LLM requests to Google Gemini 2.5 Flash when configured.
-
----
-
-## ⚡ Key Features
-
-- ⚡ **Zero-Copy Shared Memory IPC:** Bypasses standard Python `pickle`/pipe IPC serialization bottlenecks using `SharedMemoryPool` for $O(1)$ memory access across process boundaries.
-- 🛡️ **Token-Bucket Admission Controller:** Enforces backpressure shedding, adaptive rate-limiting, and circuit breakers preventing node memory exhaustion.
-- 🎯 **Dynamic Batching Engine:** Combines concurrent request streams into unified tensor batches with automatic timeout fallbacks (`batch_timeout_ms=5.0`).
-- 🔄 **Distributed Control Plane:** Built-in Gossip heartbeats, Raft consensus leader election, and metadata replication for zero-downtime cluster failover.
-- 🧠 **Dual-Engine Execution Layer:** Native local ONNX/Softmax CPU matrix inference engine with seamless fallback to Google Gemini 2.5 Flash.
-- 📊 **Real-Time Telemetry & Prometheus Scraping:** Native CPU/RAM tracking via `psutil`, NVML VRAM monitoring via `pynvml`, and standard `/metrics` Prometheus scraping for Grafana.
-- 🌐 **Multi-Protocol Ingress Adapter:** Native HTTP/1.1 REST, Server-Sent Events (SSE) streaming, WebSockets (RFC 6455), and OpenAI-compatible `/v1/chat/completions`.
-
----
-
-## 🏗️ Architecture & Flow
-
-The following Mermaid diagram details the complete **Client Ingress ➔ Admission Control ➔ SharedMemory Buffer ➔ Execution Engine ➔ Response** pipeline:
-
-```mermaid
-graph TD
-    %% Node Styling
-    classDef ingress fill:#161c2d,stroke:#00f2fe,stroke-width:2px,color:#fff;
-    classDef admission fill:#1f1938,stroke:#9d4edd,stroke-width:2px,color:#fff;
-    classDef batcher fill:#0d2818,stroke:#2ec4b6,stroke-width:2px,color:#fff;
-    classDef execution fill:#2b1e1d,stroke:#e71d36,stroke-width:2px,color:#fff;
-    classDef output fill:#1a1a1a,stroke:#ff9f1c,stroke-width:2px,color:#fff;
-
-    Client[Client Connection Request<br/>REST / SSE / WebSockets]:::ingress --> Gateway[InferX Protocol Adapter<br/>FastAPI / Asyncio Ingress]:::ingress
-    
-    subgraph AdmissionControl["🛡️ Admission & Rate Control"]
-        Gateway --> TokenBucket[Token-Bucket Rate Limiter<br/>x-api-key Verification]:::admission
-        TokenBucket -->|Pass| Backpressure[Backpressure Controller<br/>Queue Depth Watermarks]:::admission
-        TokenBucket -->|Exceeded| Error429[429 Too Many Requests]:::admission
-        Backpressure -->|Overload| CircuitBreaker[503 Circuit Breaker Open]:::admission
-    end
-
-    subgraph MemoryBuffer["⚡ Zero-Copy IPC & Batcher"]
-        Backpressure -->|Accepted| BatcherEngine[Dynamic Batching Engine<br/>Max Batch Size = 32]:::batcher
-        BatcherEngine --> SharedMem[POSIX Shared Memory Segment<br/>multiprocessing.shared_memory]:::batcher
-    end
-
-    subgraph ExecutionLayer["🧠 Execution Engine Layer"]
-        SharedMem --> Router[Gateway Router & Health Assessor]:::execution
-        Router -->|Local CPU Tensor Matrix Math| LocalEngine[Local ONNX ML Engine<br/>W · X + b Matrix Logits]:::execution
-        Router -->|Cloud LLM Target| CloudGemini[Google Gemini 2.5 Flash API<br/>google-genai Client]:::execution
-        Router -->|Pinned VRAM Stream| CudaRuntime[PyTorch / CUDA Native Runtime]:::execution
-    end
-
-    subgraph OutputPipeline["📤 Response Delivery"]
-        LocalEngine --> Formatter[Response Formatter & SSE Streamer]:::output
-        CloudGemini --> Formatter:::output
-        CudaRuntime --> Formatter:::output
-        Formatter --> ClientResponse[Client JSON / Event Stream<br/>Logits / Tokens]:::output
-    end
+Server is live at `http://localhost:10000`! Verify health:
+```bash
+curl http://localhost:10000/healthz
+# Returns: {"status": "healthy"}
 ```
 
 ---
 
-## 🔬 System Internals & Engineering Moats
+## 🔌 API Examples
 
-### 1. Zero-Copy Shared Memory IPC vs. Standard Multiprocessing
-
-Traditional Python distributed systems rely on `multiprocessing.Queue` or inter-process pipes, which require `pickle` serialization. For large tensor payloads, `pickle` copy overhead consumes up to 80% of total latency.
-
-InferX eliminates this bottleneck by utilizing POSIX shared memory segments via `multiprocessing.shared_memory`:
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    STANDARD PYTHON MULTIPROCESSING (PICKLE)                 │
-│                                                                             │
-│  [Process A] ──> Pickle Encode ──> OS Pipe ──> Pickle Decode ──> [Process B] │
-│                  (CPU Copy 1)                   (CPU Copy 2)                │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    INFERX ZERO-COPY SHARED MEMORY POOL                      │
-│                                                                             │
-│  [Process A] ───┐                                      ┌───> [Process B]   │
-│                 └───> [ POSIX SharedMemory Segment ] <──┘                   │
-│                       (O(1) Direct Memory Pointer)                          │
-└─────────────────────────────────────────────────────────────────────────────┘
+### 1. Offline Local CPU Inference (`POST /predict`)
+```bash
+curl -X POST http://localhost:10000/predict \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-valid-key" \
+  -d '{"prompt": "How does token bucket rate limiting work?", "model": "local-ml"}'
 ```
 
-#### Performance Comparison Matrix
-
-| Architectural Parameter | Standard Python IPC (Pipes/Pickle) | InferX Zero-Copy SharedMemoryPool | Performance Gain |
-| :--- | :--- | :--- | :--- |
-| **Serialization Overhead** | $O(N)$ CPU Copy & Pickle Encode | $O(1)$ Direct Offset Pointers | **Zero Serialization** |
-| **Memory Allocation** | Duplicate Copies per Subprocess | Single Shared RAM/VRAM Buffer | **$-75\%$ RAM Usage** |
-| **P95 Latency (100 concurrency)** | $184.20\text{ ms}$ | $18.39\text{ ms}$ | **$10\times$ Latency Reduction** |
-| **Steady-State Throughput** | $42.50\text{ req/sec}$ | $253.20\text{ req/sec}$ | **$6\times$ Throughput Increase** |
-
----
-
-### 2. Lock-Free Token Bucket & Backpressure Control
-
-InferX uses an asynchronous, lock-free Token Bucket rate limiter coupled with backpressure monitoring:
-
-$$T_{\text{available}} = \min\left(T_{\text{max}}, T_{\text{last}} + \Delta t \times R_{\text{refill}}\right)$$
-
-If $T_{\text{available}} < 1.0$, the request is immediately rejected with HTTP `429 Too Many Requests`. If queue depth breaches high watermarks, the **Circuit Breaker** trips, returning HTTP `503 Service Unavailable` to protect system memory.
-
----
-
-### 3. Raft Consensus & Gossip Membership
-
-For multi-node distributed deployments, InferX implements a lightweight Raft consensus algorithm:
-- **Heartbeat Interval:** $50\text{ ms}$
-- **Election Timeout:** $150\text{--}300\text{ ms}$ (randomized to prevent split-vote scenarios)
-- **Leader Failover Duration:** $< 110\text{ ms}$
-
----
-
-## 📊 Benchmarks & SLA Compliance
-
-All performance tests were measured under high concurrency workloads ($N=500$ client connections) using the InferX local Zero-Copy IPC engine.
-
-| Metric / Parameter | Measured Value | SLA Target | Status |
-| :--- | :--- | :--- | :--- |
-| **Steady State Throughput** <sup>[1]</sup> | **$253.20\text{ req/sec}$** | $> 200\text{ req/sec}$ | ✅ **PASSED** |
-| **P50 Latency (Median)** <sup>[1]</sup> | **$14.95\text{ ms}$** | $< 25.00\text{ ms}$ | ✅ **PASSED** |
-| **P95 Latency** <sup>[1]</sup> | **$18.39\text{ ms}$** | $< 50.00\text{ ms}$ | ✅ **PASSED** |
-| **P99 Latency** <sup>[1]</sup> | **$24.10\text{ ms}$** | $< 75.00\text{ ms}$ | ✅ **PASSED** |
-| **Cluster Failover Duration** | **$106.32\text{ ms}$** | $< 150.00\text{ ms}$ | ✅ **PASSED** |
-| **Config Replication Latency** | **$6.22\text{ ms}$** | $< 10.00\text{ ms}$ | ✅ **PASSED** |
-
-> [!NOTE]
-> **<sup>[1]</sup> Benchmark Footnote:** Throughput ($253.20\text{ req/sec}$) and latency metrics ($14.95\text{ ms}$ P50) were measured on local hardware using **Zero-Copy Shared Memory IPC (`SharedMemoryPool`)**. External cloud WAN API execution (such as Google Gemini API over HTTPS) includes additional network round-trip overhead ($\sim 200\text{--}400\text{ ms}$).
-
----
-
-## 🔌 API Specification & Telemetry
-
-### 1. OpenAI-Compatible Chat Completions
-```http
-POST /v1/chat/completions
-Content-Type: application/json
-
-{
-  "model": "gemini-2.5-flash",
-  "messages": [
-    { "role": "user", "content": "Explain quantum computing in simple terms." }
-  ]
-}
-```
-
-<details>
-<summary><b>View Response Payload Sample</b></summary>
-
-```json
-{
-  "id": "chatcmpl-inferx",
-  "object": "chat.completion",
-  "model": "gemini-2.5-flash",
-  "provider": "gemini",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "Quantum computing uses quantum mechanics principles like superposition and entanglement to solve complex problems exponentially faster than classical computers."
-      },
-      "finish_reason": "stop"
-    }
-  ]
-}
-```
-</details>
-
----
-
-### 2. Zero-API Key Local ML Classification
-```http
-POST /predict
-Content-Type: application/json
-x-api-key: sk-valid-key
-
-{
-  "prompt": "Run classification vector model",
-  "model": "local-ml"
-}
-```
-
-<details>
-<summary><b>View Response Payload Sample</b></summary>
-
+**Response:**
 ```json
 {
   "status": "success",
   "model_engine": "InferX-LocalML-v1.0 (ONNX Linear Layer)",
   "execution_device": "CPU-x86_64",
-  "input_tokens_count": 29,
-  "inference_logits": [0.266, 0.2954, 0.2113, 0.2273],
+  "input_tokens_count": 42,
+  "inference_logits": [0.2662, 0.2954, 0.2113, 0.2271],
   "predicted_class": "QUESTION_QUERY",
   "confidence_score": 0.2954,
-  "latency_ms": 0.047
+  "latency_ms": 0.047,
+  "response": "Local ML Engine classified input 'How does token bucket rate li...' as [QUESTION_QUERY] with 29.5% confidence."
 }
 ```
-</details>
 
----
-
-### 3. Prometheus Scraping Metric Endpoint
-```http
-GET /metrics
+### 2. Prometheus Metrics Scraping (`GET /metrics`)
+```bash
+curl http://localhost:10000/metrics
 ```
-
-<details>
-<summary><b>View Prometheus Text Output</b></summary>
-
 ```text
 # HELP inferx_active_connections Current active connections
 # TYPE inferx_active_connections gauge
-inferx_active_connections 14.0
-
-# HELP inferx_requests_total Total request count processed
-# TYPE inferx_requests_total counter
-inferx_requests_total 1250.0
+inferx_active_connections 0.0
 
 # HELP inferx_cpu_utilization_ratio Host CPU utilization ratio
 # TYPE inferx_cpu_utilization_ratio gauge
-inferx_cpu_utilization_ratio 0.24
-
-# HELP inferx_ram_utilization_ratio Host RAM utilization ratio
-# TYPE inferx_ram_utilization_ratio gauge
-inferx_ram_utilization_ratio 0.42
-
-# HELP inferx_inference_latency_ms Average inference latency in milliseconds
-# TYPE inferx_inference_latency_ms gauge
-inferx_inference_latency_ms 14.95
+inferx_cpu_utilization_ratio 0.18
 ```
-</details>
 
 ---
 
-### 4. Admission Control Error Codes
+## 📊 Real Verified Benchmarks
 
-| HTTP Status | Code String | Trigger Cause |
-| :--- | :--- | :--- |
-| `401 Unauthorized` | `UNAUTHORIZED` | Missing or invalid `x-api-key` header |
-| `429 Too Many Requests` | `RATE_LIMIT_EXCEEDED` | Token-bucket rate limiter capacity exhausted |
-| `503 Service Unavailable` | `CIRCUIT_BREAKER_OPEN` | Queue depth or memory backpressure watermark breached |
+*All benchmarks measured on Windows 11 x86_64 (CPython 3.14.0) using reproducible scripts in `tests/`:*
+
+### 1. IPC Transfer Latency: Queue vs. Shared Memory (`tests/benchmark_ipc.py`)
+| Payload Size | Standard Queue Latency | Zero-Copy Shared Memory | Measured Speedup | Why? |
+| :--- | :--- | :--- | :--- | :--- |
+| **1 KB** | $155.26\ \mu\text{s}$ | $166.96\ \mu\text{s}$ | **$0.93\times$** | Queue has less metadata coordination for tiny payloads |
+| **10 KB** | $158.44\ \mu\text{s}$ | $133.57\ \mu\text{s}$ | **$1.19\times$** | Shared memory starts winning |
+| **100 KB** | $186.16\ \mu\text{s}$ | $158.73\ \mu\text{s}$ | **$1.17\times$** | Queue copy overhead grows |
+| **1 MB** | $2,282.78\ \mu\text{s}$ | **$563.54\ \mu\text{s}$** | **$4.05\times$ speedup** | **Zero-copy eliminates OS pipe buffer duplication** |
+
+### 2. Admission Controller Decision Latency (`tests/benchmark_admission.py`)
+- **Throughput:** **$231,288\text{ decisions/sec}$**
+- **Average Decision Latency:** **$4.21\ \mu\text{s}$** (Target was $<100\ \mu\text{s}$)
+- **p95 Latency:** **$4.40\ \mu\text{s}$**
+
+### 3. Dynamic Batcher Padding Efficiency (`tests/benchmark_batcher.py`)
+- **Static Batching:** 38.92% efficiency ($2,547,712$ padded tokens generated).
+- **Shape-Bucketed Batching:** **90.60% efficiency** ($1,094,624$ padded tokens generated).
+- **Result:** **57.04% fewer wasted pad tokens**, freeing GPU memory for actual compute.
 
 ---
 
-## ☸️ Cloud & Container Deployments
+## 🧪 Running the Tests
 
-### 1. Render Deployment (`render.yaml`)
-Deploy instantly to Render using the included Blueprint:
+InferX has **75 unit tests** that run offline with zero external dependencies:
+
 ```bash
-git push render main
+# On Windows PowerShell
+$env:PYTHONPATH="."
+python -m unittest discover tests/ -p "test_*.py"
+
+# On Linux / macOS
+PYTHONPATH="." python -m unittest discover tests/ -p "test_*.py"
 ```
 
-### 2. Vercel Serverless Gateway (`vercel.json`)
-Deploy as a serverless function on Vercel:
-```bash
-vercel --prod
-```
-
-### 3. Docker & Kubernetes Helm
-```bash
-# Docker Container Run
-docker build -t inferx:latest .
-docker run -p 10000:10000 -e GEMINI_API_KEY=your_key inferx:latest
-
-# Kubernetes Helm Release
-helm install inferx deploy/kubernetes/
+```text
+Ran 75 tests in 7.34s
+OK
 ```
 
 ---
 
-## 📂 Directory Structure
+## ⚠️ Known Limitations & Roadmap
 
-```
-InferX/
-├── api/
-│   └── index.py                 # Vercel Serverless WSGI Entrypoint
-├── config/
-│   └── default.yaml             # Engine configuration & parameters
-├── deploy/
-│   ├── kubernetes/              # K8s Helm charts & manifests
-│   └── render/
-│       └── start_gateway.py     # Render entrypoint script
-├── docs/                        # Technical specifications & architecture docs
-├── examples/                    # Runnable code examples
-├── inferx/                      # Core InferX Package
-│   ├── admission/               # Rate limiters & backpressure controllers
-│   ├── batcher/                 # Dynamic tensor batching & padding
-│   ├── core/                    # Bootstrap DI, health, & shared memory
-│   ├── distributed/             # Consensus, Raft election, & RPC
-│   ├── gateway/                 # Protocols, middleware, & server CLI
-│   ├── interfaces/              # Standard interface abstractions
-│   └── model/                   # Model loader & Gemini provider
-├── pyproject.toml               # PEP 517/621 packaging file
-├── render.yaml                  # Render Blueprint manifest
-├── vercel.json                  # Vercel Serverless manifest
-└── requirements.txt             # Dependency declarations
-```
+### Current Scope & Honest Limitations
+1. **Decoupled Worker Subsystem:** The POSIX `SharedMemoryPool` and multi-process `WorkerManager` are tested and benchmarked, but the standalone CLI server (`inferx serve`) currently executes requests in-process.
+2. **Simplified Leader Election:** `inferx/distributed/election.py` implements Raft-inspired randomized campaign timers and vote consensus, but does not implement Write-Ahead Log (WAL) replication.
+3. **Local Engine Scope:** The built-in local ML engine is a pure Python linear classifier ($W \cdot X + b$), not a full transformer LLM. Generative text generation is handled by the Gemini integration.
+
+### Roadmap
+- [ ] Connect `WorkerManager` directly to the HTTP Gateway server for local multi-core inference.
+- [ ] Implement Raft Write-Ahead Log (WAL) replication for metadata state persistence.
+- [ ] Add ONNX Runtime C++ backend bindings for local transformer execution.
 
 ---
 
-## 🤝 Contributing
+## 📜 License & Attribution
 
-Contributions, feature requests, and security disclosures are welcome! 
-
-1. Fork the repository (`git checkout -b feature/AmazingFeature`)
-2. Commit your changes with signed commits (`git commit -m 'Add AmazingFeature'`)
-3. Push to the branch (`git push origin feature/AmazingFeature`)
-4. Open a Pull Request
-
----
-
-## 📜 License
+InferX was engineered by **[Reya Doshi](https://github.com/Reya-Doshi)**.
 
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for details.
-
-<div align="center">
-
-**InferX** • Engineered with ❤️ by **[Reya Doshi](https://github.com/Reya-Doshi)**
-
-</div>
