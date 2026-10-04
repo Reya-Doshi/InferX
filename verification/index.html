@@ -1,0 +1,1206 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Production-grade cloud-native distributed AI inference engine.">
+      
+      
+        <meta name="author" content="InferX Maintainers">
+      
+      
+        <link rel="canonical" href="https://docs.inferx.ai/verification/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>InferX Systems & Claim Verification Report - InferX Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="cyan">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#inferx-systems-claim-verification-report" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="InferX Documentation" class="md-header__button md-logo" aria-label="InferX Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            InferX Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              InferX Systems &amp; Claim Verification Report
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="cyan"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="cyan"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../architecture/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Architecture
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../deployment/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Deployment Guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../troubleshooting/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="InferX Documentation" class="md-nav__button md-logo" aria-label="InferX Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    InferX Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-executive-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Executive Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-claim-audit-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Claim Audit Matrix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-architecture-execution-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Architecture &amp; Execution Modes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Architecture &amp; Execution Modes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mode-1-local-container-gateway-inferx-serve-deployrenderstart_gatewaypy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mode 1: Local / Container Gateway (inferx serve / deploy/render/start_gateway.py)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mode-2-serverless-function-apiindexpy-on-vercel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mode 2: Serverless Function (api/index.py on Vercel)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mode-3-multi-process-worker-subsystem-inferxworkermanagerpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mode 3: Multi-Process Worker Subsystem (inferx/worker/manager.py)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-reproducible-local-benchmarks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Reproducible Local Benchmarks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Reproducible Local Benchmarks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-inter-process-communication-ipc-queue-vs-shared-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. Inter-Process Communication (IPC): Queue vs. Shared Memory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-admission-controller-decision-latency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. Admission Controller Decision Latency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-dynamic-batching-padding-efficiency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. Dynamic Batching Padding Efficiency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#d-gateway-http-ingress-throughput" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D. Gateway HTTP Ingress Throughput
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-security-credentials-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Security &amp; Credentials Verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-test-suite-coverage-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Test Suite &amp; Coverage Verification
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Test Suite &amp; Coverage Verification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tests-executed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests Executed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#results-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results Summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#behavioral-tests-added-in-this-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behavioral Tests Added in This Audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-synchronizing-resume-portfolio-claims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Synchronizing Resume &amp; Portfolio Claims
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-key-engineering-decisions-for-technical-interviews" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Key Engineering Decisions for Technical Interviews
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Key Engineering Decisions for Technical Interviews">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#decision-1-shared-memory-with-metadata-queues-vs-direct-pipe-ipc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision 1: Shared Memory with Metadata Queues vs. Direct Pipe IPC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#decision-2-two-tier-admission-control-token-bucket-backpressure-shedding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision 2: Two-Tier Admission Control (Token Bucket + Backpressure Shedding)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#decision-3-dual-engine-architecture-local-cpu-matrix-layer-vs-cloud-llm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision 3: Dual-Engine Architecture (Local CPU Matrix Layer vs. Cloud LLM)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="inferx-systems-claim-verification-report">InferX Systems &amp; Claim Verification Report</h1>
+<ul>
+<li><strong>Reviewed Commit:</strong> <code>c59a771</code> (with test suite additions and <code>.env.example</code>)</li>
+<li><strong>Audit Date:</strong> 2026-10-04</li>
+<li><strong>Environment:</strong> Windows 11 Home (x86_64), Python 3.14.0, Node.js v20.x</li>
+<li><strong>Author Attribution:</strong> Engineered by Reya Doshi</li>
+<li><strong>Test Results:</strong> 75 / 75 unit tests passing (<code>python -m unittest discover tests/ -p "test_*.py"</code>)</li>
+<li><strong>Linters &amp; Code Style:</strong> <code>black --check</code> (96 files clean), <code>ruff check</code> (all checks passed)</li>
+</ul>
+<hr />
+<h2 id="1-executive-summary">1. Executive Summary</h2>
+<p>This verification audit reviews <strong>InferX</strong>, an AI inference gateway and orchestration prototype built by Reya Doshi. The repository combines an asynchronous HTTP/1.1 and WebSocket gateway, token-bucket admission control, dynamic batching algorithms, multi-process POSIX shared memory buffers, a simplified Raft-style leader election coordinator, and a dual-engine execution model (local CPU matrix inference or external Google Gemini 2.5 Flash API).</p>
+<p>The primary goal of this audit is to <strong>establish reality</strong> for internship and code reviewers:
+1. Distinguish fully implemented mechanisms from decoupled prototypes and simplified implementations.
+2. Replace unverified claims with reproducible benchmarks and exact architectural boundaries.
+3. Eliminate exaggerated guarantees (e.g., claiming full Raft consensus when only leader election is implemented; claiming ONNX runtime when using pure Python linear algebra).</p>
+<hr />
+<h2 id="2-claim-audit-matrix">2. Claim Audit Matrix</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">System / Feature Claim</th>
+<th style="text-align: left;">Code Location</th>
+<th style="text-align: left;">Implemented Reality &amp; Evidence</th>
+<th style="text-align: left;">Audit Status</th>
+<th style="text-align: left;">Required Documentation Correction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>POSIX Zero-Copy Shared Memory IPC</strong></td>
+<td style="text-align: left;"><code>inferx/worker/ipc.py</code>, <code>inferx/worker/manager.py</code></td>
+<td style="text-align: left;"><code>SharedMemoryPool</code> wraps Python <code>multiprocessing.shared_memory.SharedMemory</code> with offset-based allocation via <code>SharedMemoryAllocator</code>. Benchmark demonstrates $4.05\times$ speedup at 1 MB payloads. However, this is decoupled from the active HTTP gateway server (<code>deploy/render/start_gateway.py</code>), which executes in-process predictions.</td>
+<td style="text-align: left;"><strong>VERIFIED (DECOUPLED)</strong></td>
+<td style="text-align: left;">Clarify that zero-copy IPC operates at the multi-process worker boundary, not the end-to-end HTTP socket lifecycle. Document that the standalone gateway currently routes via in-process handlers.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Raft Consensus Leader Election</strong></td>
+<td style="text-align: left;"><code>inferx/distributed/election.py</code></td>
+<td style="text-align: left;">Implements leader election states (<code>FOLLOWER</code>, <code>CANDIDATE</code>, <code>LEADER</code>), randomized campaign timers (150–300 ms), and RPC vote requests (<code>handle_request_vote</code>). However, it lacks Write-Ahead Logging (WAL), log matching, commit indices, log replication, and snapshotting.</td>
+<td style="text-align: left;"><strong>SIMPLIFIED</strong></td>
+<td style="text-align: left;">Replace "production-grade Raft consensus" with "Raft-inspired leader election for cluster failover coordination".</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Token-Bucket Admission Control</strong></td>
+<td style="text-align: left;"><code>inferx/admission/limiter.py</code>, <code>inferx/admission/shedder.py</code></td>
+<td style="text-align: left;">Full implementation of Token Bucket and Leaky Bucket algorithms, coupled with VRAM/CPU backpressure controllers and circuit breakers. Verified with 6 unit tests and benchmarks yielding &gt;230,000 decisions/sec.</td>
+<td style="text-align: left;"><strong>VERIFIED</strong></td>
+<td style="text-align: left;">Accurate as implemented. Retain claim.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dynamic Batching Engine</strong></td>
+<td style="text-align: left;"><code>inferx/batcher/engine.py</code>, <code>inferx/batcher/padding.py</code></td>
+<td style="text-align: left;">Implements <code>StaticBatcher</code> (batch size &amp; timeout windows), <code>ContinuousBatcher</code> (step-by-step iteration), tensor padding alignment, and <code>ShapeBucketeer</code>. Benchmark proves 57.0% reduction in padded tokens via shape bucketing.</td>
+<td style="text-align: left;"><strong>VERIFIED</strong></td>
+<td style="text-align: left;">Accurate as implemented. Retain claim.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Local ONNX ML Engine ($W \cdot X + b$)</strong></td>
+<td style="text-align: left;"><code>inferx/model/loader.py</code> (<code>LocalMLEngineProvider</code>)</td>
+<td style="text-align: left;">Implements a 4-class, 16-feature CPU linear classification layer ($W \cdot X + b$ + Softmax) written in pure Python. It does <strong>not</strong> link against the C++ <code>onnxruntime</code> library (<code>onnxruntime</code> is not in dependencies).</td>
+<td style="text-align: left;"><strong>SIMPLIFIED</strong></td>
+<td style="text-align: left;">Replace "ONNX ML Engine" with "Local CPU Matrix Inference Layer (Pure Python linear layer with Softmax logits)".</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>External LLM Integration</strong></td>
+<td style="text-align: left;"><code>inferx/model/loader.py</code> (<code>GeminiProvider</code>), <code>deploy/render/start_gateway.py</code></td>
+<td style="text-align: left;">Successfully integrates with Google Gemini 2.5 Flash via <code>google-genai</code> SDK with exponential backoff retries when <code>GEMINI_API_KEY</code> is present. Falls back cleanly when offline.</td>
+<td style="text-align: left;"><strong>VERIFIED</strong></td>
+<td style="text-align: left;">Document as optional cloud fallback.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Prometheus Telemetry Endpoint</strong></td>
+<td style="text-align: left;"><code>inferx/gateway/protocols.py</code>, <code>api/index.py</code></td>
+<td style="text-align: left;">Exposes standard Prometheus text exposition format on <code>GET /metrics</code> and JSON telemetry on <code>GET /api/metrics</code>.</td>
+<td style="text-align: left;"><strong>VERIFIED</strong></td>
+<td style="text-align: left;">Accurate as implemented. Retain claim.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Headline Benchmarks (253.2 req/s, 14.95 ms P50)</strong></td>
+<td style="text-align: left;"><code>README.md</code> (previous)</td>
+<td style="text-align: left;">These numbers originated from synthetic test assertions in <code>tests/test_observability.py</code> rather than saved samples from a reproducible benchmark run.</td>
+<td style="text-align: left;"><strong>UNVERIFIED (SYNTHETIC)</strong></td>
+<td style="text-align: left;">Replace with actual reproducible benchmark results from <code>tests/benchmark_*.py</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Build Passing Badge</strong></td>
+<td style="text-align: left;"><code>README.md</code></td>
+<td style="text-align: left;">Badge was a static SVG shield (<code>https://img.shields.io/badge/Build-Passing-brightgreen.svg</code>).</td>
+<td style="text-align: left;"><strong>CORRECTED</strong></td>
+<td style="text-align: left;">Replaced with dynamic GitHub Actions workflow badge: <code>https://github.com/Reya-Doshi/InferX/actions/workflows/ci.yml/badge.svg</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-architecture-execution-modes">3. Architecture &amp; Execution Modes</h2>
+<p>InferX operates across four distinct execution configurations:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>                                 ┌───────────────────────────────┐
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                                 │   Incoming Request (HTTP/WS)  │
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                                 └──────────────┬────────────────┘
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                                                │
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                                  [ Middleware &amp; Auth Check ]
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>                                                │
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                                 [ Token-Bucket Admission Gate ]
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                                                │
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>                 ┌──────────────────────────────┼──────────────────────────────┐
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>                 ▼                              ▼                              ▼
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>      [ Mode 1: Local CLI ]          [ Mode 2: Serverless WSGI ]     [ Mode 3: Worker Subprocess ]
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>   deploy/render/start_gateway.py          api/index.py (Vercel)          inferx/worker/manager.py
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>                 │                              │                              │
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        In-Process Predict             In-Process Predict             Multi-Process IPC Queue
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>                 │                              │                              │
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    ┌────────────┴────────────┐    ┌────────────┴────────────┐                 ▼
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    ▼                         ▼    ▼                         ▼         [ SharedMemoryPool ]
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>Gemini 2.5              Local Matrix  Gemini 2.5        Local Matrix     (POSIX /dev/shm 64KB Slots)
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a> (Cloud)                  (CPU)         (Cloud)            (CPU)               │
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>                                                                               ▼
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>                                                                        [ Worker Hot Loop ]
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>                                                                       (CUDA Streams / CPU)
+</span></code></pre></div>
+<h3 id="mode-1-local-container-gateway-inferx-serve-deployrenderstart_gatewaypy">Mode 1: Local / Container Gateway (<code>inferx serve</code> / <code>deploy/render/start_gateway.py</code>)</h3>
+<ul>
+<li><strong>Ingress:</strong> <code>asyncio</code> TCP server implementing custom HTTP/1.1 and RFC 6455 WebSocket framing.</li>
+<li><strong>Admission:</strong> Rate limiting via <code>TokenBucketLimiter</code> (<code>sk-valid-key</code> or <code>INFERX_AUTH_TOKEN</code>).</li>
+<li><strong>Execution:</strong> Dispatches to in-process <code>mock_predict</code>. When <code>GEMINI_API_KEY</code> is configured, calls Google Gemini 2.5 Flash; otherwise returns deterministic string tokens.</li>
+</ul>
+<h3 id="mode-2-serverless-function-apiindexpy-on-vercel">Mode 2: Serverless Function (<code>api/index.py</code> on Vercel)</h3>
+<ul>
+<li><strong>Ingress:</strong> Standard WSGI application interface (<code>app(environ, start_response)</code>).</li>
+<li><strong>Execution:</strong> Stateless single-process execution. When <code>GEMINI_API_KEY</code> is present and model is <code>gemini-2.5-flash</code>, invokes <code>google.genai.Client</code>. When offline or requesting <code>local-ml</code>, executes <code>LocalMLEngineProvider</code> ($W \cdot X + b$ linear layer on CPU).</li>
+<li><strong>Limitation:</strong> Shared memory and multi-process worker pools cannot run inside serverless lambda runtimes.</li>
+</ul>
+<h3 id="mode-3-multi-process-worker-subsystem-inferxworkermanagerpy">Mode 3: Multi-Process Worker Subsystem (<code>inferx/worker/manager.py</code>)</h3>
+<ul>
+<li><strong>Ingress:</strong> Internal <code>multiprocessing.Queue</code> for metadata signaling.</li>
+<li><strong>Payload Transfer:</strong> Raw bytes written to <code>SharedMemoryPool</code> (<code>SharedMemoryAllocator</code> assigns 64 KB slots).</li>
+<li><strong>Execution:</strong> Subprocesses spawned via <code>multiprocessing.get_context("spawn")</code>. Workers read directly from shared memory, execute <code>BatchExecutor</code> on virtual CUDA streams, update an atomic <code>heartbeat_val</code>, and reply via response queues.</li>
+<li><strong>Crash Recovery:</strong> Parent supervisor watchdog detects missed heartbeats (&gt;3.0s) and automatically respawns dead worker processes.</li>
+</ul>
+<hr />
+<h2 id="4-reproducible-local-benchmarks">4. Reproducible Local Benchmarks</h2>
+<p>All benchmarks were executed on the target environment (Windows 11 x86_64, CPython 3.14.0) with clean runs:</p>
+<h3 id="a-inter-process-communication-ipc-queue-vs-shared-memory">A. Inter-Process Communication (IPC): Queue vs. Shared Memory</h3>
+<ul>
+<li><strong>Script:</strong> <code>python tests/benchmark_ipc.py</code></li>
+<li><strong>Methodology:</strong> 1,000 iterations per payload size, comparing standard <code>multiprocessing.Queue</code> pickle transfer against <code>SharedMemoryPool</code> with metadata queue signaling.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Payload Size</th>
+<th style="text-align: left;">Standard Queue Latency</th>
+<th style="text-align: left;">Zero-Copy SHM Latency</th>
+<th style="text-align: left;">Measured Speedup</th>
+<th style="text-align: left;">Architectural Implication</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>1 KB</strong></td>
+<td style="text-align: left;">$155.26\ \mu\text{s}$</td>
+<td style="text-align: left;">$166.96\ \mu\text{s}$</td>
+<td style="text-align: left;"><strong>$0.93\times$</strong></td>
+<td style="text-align: left;">Queue is slightly faster for small payloads due to SHM offset signaling overhead.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>10 KB</strong></td>
+<td style="text-align: left;">$158.44\ \mu\text{s}$</td>
+<td style="text-align: left;">$133.57\ \mu\text{s}$</td>
+<td style="text-align: left;"><strong>$1.19\times$</strong></td>
+<td style="text-align: left;">Shared memory begins to break even.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>100 KB</strong></td>
+<td style="text-align: left;">$186.16\ \mu\text{s}$</td>
+<td style="text-align: left;">$158.73\ \mu\text{s}$</td>
+<td style="text-align: left;"><strong>$1.17\times$</strong></td>
+<td style="text-align: left;">Moderate speedup as serialization cost increases.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>1 MB</strong></td>
+<td style="text-align: left;">$2,282.78\ \mu\text{s}$ ($2.28\text{ ms}$)</td>
+<td style="text-align: left;">$563.54\ \mu\text{s}$ ($0.56\text{ ms}$)</td>
+<td style="text-align: left;"><strong>$4.05\times$</strong></td>
+<td style="text-align: left;"><strong>Major speedup</strong>: Eliminates memory copies and CPU pickling overhead for large tensors.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Key Takeaway for Reviewers:</strong> Zero-copy shared memory is not universally faster for all message sizes. It provides a significant advantage ($4.05\times$) for large tensor payloads ($\ge 1\text{ MB}$), while standard queues have lower overhead for micro-messages ($\le 1\text{ KB}$).</p>
+</blockquote>
+<h3 id="b-admission-controller-decision-latency">B. Admission Controller Decision Latency</h3>
+<ul>
+<li><strong>Script:</strong> <code>python tests/benchmark_admission.py</code></li>
+<li><strong>Methodology:</strong> 100,000 sequential decision evaluations through <code>TokenBucketLimiter</code> and <code>AdmissionManager</code>.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Metric</th>
+<th style="text-align: left;">Measured Value</th>
+<th style="text-align: left;">Target SLA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Throughput</strong></td>
+<td style="text-align: left;"><strong>$231,288\text{ decisions/sec}$</strong></td>
+<td style="text-align: left;">$&gt; 50,000\text{ decisions/sec}$</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Average Decision Latency</strong></td>
+<td style="text-align: left;"><strong>$4.21\ \mu\text{s}$</strong></td>
+<td style="text-align: left;">$&lt; 100.0\ \mu\text{s}$</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>p50 Latency</strong></td>
+<td style="text-align: left;"><strong>$4.10\ \mu\text{s}$</strong></td>
+<td style="text-align: left;">$&lt; 50.0\ \mu\text{s}$</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>p95 Latency</strong></td>
+<td style="text-align: left;"><strong>$4.40\ \mu\text{s}$</strong></td>
+<td style="text-align: left;">$&lt; 100.0\ \mu\text{s}$</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>p99 Latency</strong></td>
+<td style="text-align: left;"><strong>$5.50\ \mu\text{s}$</strong></td>
+<td style="text-align: left;">$&lt; 250.0\ \mu\text{s}$</td>
+</tr>
+</tbody>
+</table>
+<h3 id="c-dynamic-batching-padding-efficiency">C. Dynamic Batching Padding Efficiency</h3>
+<ul>
+<li><strong>Script:</strong> <code>python tests/benchmark_batcher.py</code></li>
+<li><strong>Methodology:</strong> 5,000 requests processed under standard static batching vs. shape-bucketed batching.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Batching Strategy</th>
+<th style="text-align: left;">Total Actual Tokens</th>
+<th style="text-align: left;">Padded Tokens Generated</th>
+<th style="text-align: left;">Padding Efficiency</th>
+<th style="text-align: left;">Token Reduction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Standard Static Batching</strong></td>
+<td style="text-align: left;">991,696</td>
+<td style="text-align: left;">2,547,712</td>
+<td style="text-align: left;">38.92%</td>
+<td style="text-align: left;">Baseline</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Shape-Bucketed Batching</strong></td>
+<td style="text-align: left;">991,696</td>
+<td style="text-align: left;">1,094,624</td>
+<td style="text-align: left;"><strong>90.60%</strong></td>
+<td style="text-align: left;"><strong>57.04% fewer wasted pad tokens</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="d-gateway-http-ingress-throughput">D. Gateway HTTP Ingress Throughput</h3>
+<ul>
+<li><strong>Script:</strong> <code>python tests/benchmark_gateway.py</code></li>
+<li><strong>Methodology:</strong> 3,000 concurrent HTTP POST <code>/predict</code> requests against local <code>GatewayManager</code>.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Measured Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Completed Requests</strong></td>
+<td style="text-align: left;">3,000</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Duration</strong></td>
+<td style="text-align: left;">2.031 seconds</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Throughput</strong></td>
+<td style="text-align: left;"><strong>$1,477.29\text{ req/sec}$</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Average Latency</strong></td>
+<td style="text-align: left;">$10.14\text{ ms}$</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>p95 Latency</strong></td>
+<td style="text-align: left;">$12.45\text{ ms}$</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-security-credentials-verification">5. Security &amp; Credentials Verification</h2>
+<ul>
+<li><strong>Literal Credentials Search:</strong> Performed repository-wide regex search for credentials (<code>AIza</code>, <code>sk-</code>, <code>secret</code>, <code>password</code>, <code>token</code>).</li>
+<li><strong>Findings:</strong></li>
+<li>No active credentials, private keys, or personal API tokens exist in the Git tree.</li>
+<li>Test scripts and documentation utilize mock placeholders: <code>sk-valid-key</code> and <code>super-secret-auth-token-123</code>.</li>
+<li>Added <code>.env.example</code> to root directory to provide a standardized template for operators.</li>
+<li><strong>Git History:</strong> No sensitive keys require rotation or history rewrites.</li>
+</ul>
+<hr />
+<h2 id="6-test-suite-coverage-verification">6. Test Suite &amp; Coverage Verification</h2>
+<h3 id="tests-executed">Tests Executed</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nv">$env</span>:PYTHONPATH<span class="o">=</span><span class="s2">"."</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python<span class="w"> </span>-m<span class="w"> </span>unittest<span class="w"> </span>discover<span class="w"> </span>tests/<span class="w"> </span>-p<span class="w"> </span><span class="s2">"test_*.py"</span>
+</span></code></pre></div>
+<h3 id="results-summary">Results Summary</h3>
+<ul>
+<li><strong>Total Test Cases:</strong> 75</li>
+<li><strong>Status:</strong> 75 Passed, 0 Failed, 0 Skipped</li>
+<li><strong>Runtime:</strong> 7.24 seconds</li>
+</ul>
+<h3 id="behavioral-tests-added-in-this-audit">Behavioral Tests Added in This Audit</h3>
+<ol>
+<li><code>tests/test_worker.py::test_shared_memory_out_of_bounds_rejection</code>: Validates that writing or reading beyond the allocated shared memory buffer boundary raises <code>ValueError</code>.</li>
+<li><code>tests/test_worker.py::test_shared_memory_allocator_exhaustion_and_reuse</code>: Validates that allocating slots beyond total pool capacity raises <code>BufferError</code>, and that freeing slots allows clean reallocation without duplicate slot index corruption.</li>
+<li><code>tests/test_distributed.py::test_election_higher_term_preemption</code>: Validates that candidate/leader nodes immediately revert to <code>FOLLOWER</code> state upon encountering higher terms, resetting their leader assignment and vote.</li>
+<li><code>tests/test_distributed.py::test_election_no_quorum_rejection</code>: Validates that when candidate nodes fail to gather a majority quorum from peers, they do not transition to <code>LEADER</code>.</li>
+<li><code>tests/test_model.py::test_local_ml_engine_vector_inference</code>: Validates <code>LocalMLEngineProvider</code> linear layer matrix multiplication ($4 \times 16$ weights), softmax output normalization, and empty token fallback handling.</li>
+</ol>
+<hr />
+<h2 id="7-synchronizing-resume-portfolio-claims">7. Synchronizing Resume &amp; Portfolio Claims</h2>
+<p>If presenting InferX to recruiters or technical interviewers, update any external resume bullet points as follows:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Outdated / Exaggerated Resume Claim</th>
+<th style="text-align: left;">Grounded, High-Signal Replacement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><em>"Built distributed AI inference engine with production Raft consensus algorithm"</em></td>
+<td style="text-align: left;"><em>"Engineered distributed control plane featuring Raft-inspired randomized timeout leader election and gossip failure detection"</em></td>
+</tr>
+<tr>
+<td style="text-align: left;"><em>"Implemented zero-copy shared memory IPC achieving 253.2 req/sec across the cluster"</em></td>
+<td style="text-align: left;"><em>"Engineered POSIX shared-memory IPC (<code>SharedMemoryPool</code>), achieving a $4.05\times$ speedup over Python <code>multiprocessing.Queue</code> for 1 MB tensor payloads"</em></td>
+</tr>
+<tr>
+<td style="text-align: left;"><em>"Deployed local ONNX runtime engine running deep neural networks on CPU"</em></td>
+<td style="text-align: left;"><em>"Built dual-engine execution architecture with local CPU linear classification ($W \cdot X + b$ + Softmax) and cloud LLM fallback"</em></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-key-engineering-decisions-for-technical-interviews">8. Key Engineering Decisions for Technical Interviews</h2>
+<p>When discussing InferX in an interview, be prepared to explain these three core engineering decisions:</p>
+<h3 id="decision-1-shared-memory-with-metadata-queues-vs-direct-pipe-ipc">Decision 1: Shared Memory with Metadata Queues vs. Direct Pipe IPC</h3>
+<ul>
+<li><strong>Problem:</strong> Python's standard <code>multiprocessing.Queue</code> serializes payloads with <code>pickle</code>. For large tensor inputs (e.g., embeddings or batch images $\ge 1\text{ MB}$), serializing and copying across OS pipe buffers accounts for over 70% of end-to-end IPC latency.</li>
+<li><strong>Solution:</strong> Allocated a fixed-size POSIX shared memory pool (<code>SharedMemoryPool</code>) and managed it with a lock-free offset allocator (<code>SharedMemoryAllocator</code>). The queue is used exclusively for tiny metadata descriptors <code>(offset, size)</code> while the tensor bytes remain in shared RAM.</li>
+<li><strong>Trade-off:</strong> For payloads smaller than 1 KB, the overhead of offset allocation and synchronization negates the benefits ($0.93\times$ speedup). Shared memory was therefore targeted at bulk tensor batches where savings reach $4.05\times$.</li>
+</ul>
+<h3 id="decision-2-two-tier-admission-control-token-bucket-backpressure-shedding">Decision 2: Two-Tier Admission Control (Token Bucket + Backpressure Shedding)</h3>
+<ul>
+<li><strong>Problem:</strong> A high-throughput gateway faces two distinct overload modes: rapid bursts of requests from a single client (rate limit abuse) and aggregate resource exhaustion where worker queues back up (noisy neighbor / slow inference).</li>
+<li><strong>Solution:</strong> Separated rate limiting from resource protection. A client-facing Token Bucket limiter handles burst smoothing ($O(1)$ token consumption). Behind it, a priority-aware load shedder monitors host VRAM and queue depth. If high watermarks (e.g., 85% VRAM) are reached, low-priority requests are shed with HTTP 503 before workers run out of memory.</li>
+<li><strong>Trade-off:</strong> Dropping requests at the gateway requires clients to handle HTTP 429 and 503 retries, but it prevents catastrophic worker process crashes (OOM kills) that would destabilize the entire cluster.</li>
+</ul>
+<h3 id="decision-3-dual-engine-architecture-local-cpu-matrix-layer-vs-cloud-llm">Decision 3: Dual-Engine Architecture (Local CPU Matrix Layer vs. Cloud LLM)</h3>
+<ul>
+<li><strong>Problem:</strong> Demonstrating an inference engine without requiring an external paid API key or a dedicated NVIDIA GPU instance.</li>
+<li><strong>Solution:</strong> Implemented <code>LocalMLEngineProvider</code>, a self-contained linear classification layer with Softmax probability normalization written without external C++ bindings. If an operator provides a <code>GEMINI_API_KEY</code>, the router dispatches to Google Gemini 2.5 Flash. If no key is configured, the gateway executes local CPU matrix math with zero external dependencies.</li>
+<li><strong>Trade-off:</strong> The local CPU engine performs a 4-class linear projection rather than full transformer autoregressive generation, but it provides a deterministic, zero-configuration local execution path for CI and reviewers.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
